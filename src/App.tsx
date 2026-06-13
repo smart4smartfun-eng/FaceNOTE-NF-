@@ -24,6 +24,7 @@ export default function App() {
   const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
   const [stories, setStories] = useState<Story[]>(INITIAL_STORIES);
   const [friends, setFriends] = useState<Friend[]>(INITIAL_FRIENDS);
+  const [selectedFriendId, setSelectedFriendId] = useState<string>(INITIAL_FRIENDS[0]?.id || '');
   const [activeTab, setActiveTab] = useState<'feed' | 'messenger' | 'wallet' | 'profile'>('feed');
 
   // Monetization and Earnings State
@@ -230,6 +231,36 @@ export default function App() {
     triggerFloatingDollar('+$0.50 CALL BONUS');
   };
 
+  const handleStartChat = (authorName: string, authorAvatar?: string) => {
+    let existingFriend = friends.find(f => f.name.toLowerCase() === authorName.toLowerCase());
+    
+    if (!existingFriend) {
+      const newFriendId = 'f_dyn_' + Date.now();
+      const newFriend = {
+        id: newFriendId,
+        name: authorName,
+        avatar: authorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+        isOnline: true,
+        lastActive: 'Active now',
+        messages: [
+          { 
+            id: 'm_init_' + Math.random(), 
+            senderId: 'them' as const, 
+            text: `Hey! Thanks for messaging me about my FaceNOTE content. Let's chat!`, 
+            timestamp: 'Just now' 
+          }
+        ],
+        lastMessage: "Hey! Thanks for messaging me about my FaceNOTE content. Let's chat!"
+      };
+      setFriends(prev => [newFriend, ...prev]);
+      setSelectedFriendId(newFriendId);
+    } else {
+      setSelectedFriendId(existingFriend.id);
+    }
+    
+    setActiveTab('messenger');
+  };
+
   return (
     <DeviceSimulator>
       
@@ -281,6 +312,7 @@ export default function App() {
                 onTriggerFloatingDollar={triggerFloatingDollar}
                 onUpdateWallet={setWallet}
                 onUpdatePosts={setPosts}
+                onStartChat={handleStartChat}
               />
             )}
 
@@ -289,6 +321,9 @@ export default function App() {
                 friends={friends}
                 onSendMessage={handleSendMessage}
                 onInitiateCall={handleInitiateCall}
+                selectedFriendId={selectedFriendId}
+                onSelectFriend={setSelectedFriendId}
+                onStartChat={handleStartChat}
               />
             )}
 

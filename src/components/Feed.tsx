@@ -13,6 +13,7 @@ interface FeedProps {
   onTriggerFloatingDollar: (label?: string) => void;
   onUpdateWallet: (updater: (prev: WalletState) => WalletState) => void;
   onUpdatePosts: (updater: (prev: Post[]) => Post[]) => void;
+  onStartChat?: (authorName: string, authorAvatar?: string) => void;
 }
 
 export default function Feed({
@@ -25,7 +26,8 @@ export default function Feed({
   onAddComment,
   onTriggerFloatingDollar,
   onUpdateWallet,
-  onUpdatePosts
+  onUpdatePosts,
+  onStartChat
 }: FeedProps) {
   const [inputText, setInputText] = useState('');
   const [mediaFile, setMediaFile] = useState<File | null>(null);
@@ -321,20 +323,33 @@ export default function Feed({
             )}
 
             {/* Profile Header */}
-            <div className="flex gap-2.5 items-center">
-              <img
-                src={post.authorAvatar}
-                alt={post.authorName}
-                className="w-9 h-9 rounded-full object-cover border border-slate-800"
-                referrerPolicy="no-referrer"
-              />
-              <div>
-                <h4 className="text-xs font-bold text-white flex items-center gap-1">
-                  {post.authorName}
-                  {!post.isSponsored && <ShieldCheck className="w-3.5 h-3.5 text-blue-500 cursor-pointer" />}
-                </h4>
-                <p className="text-[9.5px] text-slate-500">{post.timestamp}</p>
+            <div className="flex justify-between items-center w-full">
+              <div className="flex gap-2.5 items-center">
+                <img
+                  src={post.authorAvatar}
+                  alt={post.authorName}
+                  className="w-9 h-9 rounded-full object-cover border border-slate-800"
+                  referrerPolicy="no-referrer"
+                />
+                <div>
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1">
+                    {post.authorName}
+                    {!post.isSponsored && <ShieldCheck className="w-3.5 h-3.5 text-blue-500 cursor-pointer" />}
+                  </h4>
+                  <p className="text-[9.5px] text-slate-500">{post.timestamp}</p>
+                </div>
               </div>
+
+              {!post.isSponsored && user.name !== post.authorName && onStartChat && (
+                <button
+                  id={`chat-post-author-${post.id}`}
+                  onClick={() => onStartChat(post.authorName, post.authorAvatar)}
+                  className="bg-slate-950 hover:bg-slate-800 text-blue-400 hover:text-blue-300 border border-slate-850 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 active:scale-95 shadow-sm"
+                  title={`Start secure P2P chat with ${post.authorName}`}
+                >
+                  💬 Message
+                </button>
+              )}
             </div>
 
             {post.isGated && !post.unlockedByMe ? (
