@@ -1,0 +1,9 @@
+{
+  "name": "FaceNoteHub",
+  "description": "A fully featured, high-converting social platform with authentic Facebook-style layouts, a right-aligned FN logo, multi-method registration (including dynamic biometric Face Scan), simulated live video/voice calls, and a custom monetization workspace that prints real-time earnings based on user engagement.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
