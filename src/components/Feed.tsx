@@ -1,6 +1,84 @@
 import React, { useState, useRef } from 'react';
-import { Send, Image, Video as VideoIcon, Heart, MessageSquare, Flame, Sparkles, Share2, Eye, ShieldCheck, X, MapPin, Compass, Navigation, Info, Globe } from 'lucide-react';
+import { Send, Image, Video as VideoIcon, Heart, MessageSquare, Flame, Sparkles, Share2, Eye, ShieldCheck, X, MapPin, Compass, Navigation, Info, Globe, Play, ExternalLink, ThumbsUp, Briefcase, Award, Plus, Trash2, Facebook, Instagram, Twitter, Linkedin, Check } from 'lucide-react';
 import { Post, Story, User, Comment, WalletState } from '../types';
+import SocialAdsHub, { AdPlatformConfig } from './SocialAdsHub';
+
+interface MockSocialAd {
+  id: string;
+  platform: 'Facebook' | 'Instagram' | 'TikTok' | 'Twitter' | 'LinkedIn';
+  authorName: string;
+  authorAvatar: string;
+  content: string;
+  mediaUrl: string;
+  ctaText: string;
+  tag: string;
+  rewardUSD: number;
+  rewardCoins: number;
+}
+
+const MOCK_SOCIAL_ADS: MockSocialAd[] = [
+  {
+    id: 'shad_fb_masterclass',
+    platform: 'Facebook',
+    authorName: 'MasterClass Sponsored',
+    authorAvatar: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100',
+    content: '🎓 Unleash your creativity. Learn screenwriting from Aaron Sorkin, scientific negotiation skills from Chris Voss, or gourmet cooking from Gordon Ramsay. Access 180+ courses. Access is limited so click below to claim your standard startup code today! 🌟',
+    mediaUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop&q=80',
+    ctaText: 'Learn More',
+    tag: 'CPC $0.15',
+    rewardUSD: 0.15,
+    rewardCoins: 5
+  },
+  {
+    id: 'shad_insta_airbnb',
+    platform: 'Instagram',
+    authorName: 'airbnb_destinations',
+    authorAvatar: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=100',
+    content: '🌴 Secluded beach views, rustic forest retreats, or modern glass penthouses. Wherever you feel like heading, airbnb has a cozy, vetted host ready to hand over the keys. Find yours! #travelblogger #sunsetcoast',
+    mediaUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
+    ctaText: 'Book Now',
+    tag: 'CTR 3.4%',
+    rewardUSD: 0.20,
+    rewardCoins: 8
+  },
+  {
+    id: 'shad_tiktok_gymshark',
+    platform: 'TikTok',
+    authorName: 'gymshark_official',
+    authorAvatar: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=100',
+    content: '🔥 Engineered with ultra-light fabrics, seamless breathable fits, and premium zero-frictional seams. The Gymshark Essential collection is made to survive your heaviest workouts. Tap "Shop Now" with code FACENOTE15 for checkout discount. 🏆🏋️ #gymshark',
+    mediaUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&auto=format&fit=crop&q=80',
+    ctaText: 'Shop Now',
+    tag: 'CPM $0.35',
+    rewardUSD: 0.35,
+    rewardCoins: 12
+  },
+  {
+    id: 'shad_twitter_openai',
+    platform: 'Twitter',
+    authorName: 'OpenAI Developer Hub',
+    authorAvatar: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=100',
+    content: '🤖 Streamline agent workflows natively. The new Google GenAI Node SDK provides fully async real-time tool calling routing, direct multimodal audio input, and low-latency system-instruction presets out of the box. ⚡ #OpenAI #BuildAgent',
+    mediaUrl: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=600&auto=format&fit=crop&q=80',
+    ctaText: 'Try API Now',
+    tag: 'CPC $0.12',
+    rewardUSD: 0.12,
+    rewardCoins: 4
+  },
+  {
+    id: 'shad_linkedin_google',
+    platform: 'LinkedIn',
+    authorName: 'Google Cloud Careers',
+    authorAvatar: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=100',
+    content: '🚀 Google is expanding cloud engineering teams globally! We are seeking Senior Software Engineers & DevOps Architect Champions to scale multi-region server databases. Click to view open opportunities and salary ranges! #LifeAtGoogle',
+    mediaUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&auto=format&fit=crop&q=80',
+    ctaText: 'Apply Job',
+    tag: 'CPM $0.45',
+    rewardUSD: 0.45,
+    rewardCoins: 15
+  }
+];
+
 
 interface FeedProps {
   user: User;
@@ -30,6 +108,16 @@ export default function Feed({
   onStartChat
 }: FeedProps) {
   const [inputText, setInputText] = useState('');
+  const [showAdsMonetizer, setShowAdsMonetizer] = useState(false);
+  const [adConfig, setAdConfig] = useState<AdPlatformConfig>({
+    facebookEnabled: true,
+    instagramEnabled: true,
+    tiktokEnabled: true,
+    twitterEnabled: false,
+    linkedinEnabled: false,
+    density: 'medium'
+  });
+  const [claimedAds, setClaimedAds] = useState<Record<string, boolean>>({});
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string | null>(null);
@@ -296,6 +384,69 @@ export default function Feed({
 
     onTriggerFloatingDollar(`+$${(targetPost.gatePrice || 0.99).toFixed(2)} CONTENT GAIN`);
   };
+
+  const handleClaimAdProfit = (ad: MockSocialAd) => {
+    if (claimedAds[ad.id]) return;
+    
+    // Set ad ID as claimed so they don't click it again
+    setClaimedAds(prev => ({ ...prev, [ad.id]: true }));
+
+    // Calculate profit
+    const finalRevenue = +(ad.rewardUSD * wallet.adDensityMultiplier).toFixed(2);
+    const finalCoins = Math.round(ad.rewardCoins * wallet.adDensityMultiplier);
+
+    // Update wallet
+    onUpdateWallet(prev => {
+      // Update stats inside localstorage as well for social suite consistency
+      const statsSaved = localStorage.getItem('facenote_ad_stats');
+      if (statsSaved) {
+        try {
+          const statsObj = JSON.parse(statsSaved);
+          statsObj.clicks += 1;
+          statsObj.earnings = +(statsObj.earnings + finalRevenue).toFixed(2);
+          localStorage.setItem('facenote_ad_stats', JSON.stringify(statsObj));
+        } catch (e) {}
+      }
+
+      return {
+        ...prev,
+        balanceUSD: +(prev.balanceUSD + finalRevenue).toFixed(2),
+        fnCoins: prev.fnCoins + finalCoins
+      };
+    });
+
+    onTriggerFloatingDollar(`+$${finalRevenue.toFixed(2)} ${ad.platform} Ad Payout!`);
+  };
+
+  // Filter active mock social ads based on what networks are enabled in adConfig
+  const activeSocialAds = MOCK_SOCIAL_ADS.filter(ad => {
+    if (ad.platform === 'Facebook') return adConfig.facebookEnabled;
+    if (ad.platform === 'Instagram') return adConfig.instagramEnabled;
+    if (ad.platform === 'TikTok') return adConfig.tiktokEnabled;
+    if (ad.platform === 'Twitter') return adConfig.twitterEnabled;
+    if (ad.platform === 'LinkedIn') return adConfig.linkedinEnabled;
+    return false;
+  });
+
+  const renderList: (
+    | { type: 'post'; data: Post }
+    | { type: 'socialAd'; data: MockSocialAd }
+  )[] = [];
+
+  let adInterval = 3;
+  if (adConfig.density === 'low') adInterval = 5;
+  if (adConfig.density === 'high') adInterval = 2;
+  if (adConfig.density === 'extreme') adInterval = 1;
+
+  let adIdx = 0;
+  posts.forEach((post, i) => {
+    renderList.push({ type: 'post', data: post });
+    if (activeSocialAds.length > 0 && (i + 1) % adInterval === 0) {
+      const selectedAd = activeSocialAds[adIdx % activeSocialAds.length];
+      renderList.push({ type: 'socialAd', data: selectedAd });
+      adIdx++;
+    }
+  });
 
   return (
     <div className="w-full h-full bg-slate-950 overflow-y-auto no-scrollbar pb-20 animate-fade-in relative">
@@ -637,9 +788,173 @@ export default function Feed({
         </div>
       </form>
 
-      {/* Main Feed Posts List */}
+      {/* Active Social Ads Monetisation Suite banner */}
+      <div className="mx-4 mb-4 bg-gradient-to-r from-emerald-950/45 via-blue-950/45 to-slate-900 border border-emerald-500/15 rounded-2xl p-3.5 space-y-3 shadow-lg relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-emerald-500/5 via-transparent to-transparent pointer-events-none" />
+        <div className="flex justify-between items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl font-bold flex items-center justify-center text-sm animate-pulse">
+              🪙
+            </span>
+            <div>
+              <h4 className="text-xs font-black uppercase text-slate-200 tracking-wider flex items-center gap-1">
+                Social Ads Ad-Revenue Core
+              </h4>
+              <p className="text-[10px] text-zinc-400 font-medium">
+                Monetization active • <span className="text-emerald-400 font-bold">{(wallet.adDensityMultiplier).toFixed(1)}x yield booster</span>
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAdsMonetizer(!showAdsMonetizer)}
+            className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] px-3 py-1.5 rounded-xl transition-all shadow-md shadow-blue-600/10 active:scale-95 cursor-pointer leading-none"
+          >
+            {showAdsMonetizer ? 'Hide Control Panel' : 'Expand Setup Config'}
+          </button>
+        </div>
+
+        {showAdsMonetizer && (
+          <div className="mt-1 pb-1 border-t border-slate-800 pt-3">
+            <SocialAdsHub
+              wallet={wallet}
+              onUpdateWallet={onUpdateWallet}
+              onTriggerFloatingDollar={onTriggerFloatingDollar}
+              onAdConfigChange={(c) => setAdConfig(c)}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Main Feed Posts & Integrated Social Ads List */}
       <div className="space-y-4 px-4 pb-4">
-        {posts.map(post => (
+        {renderList.map((item, idx) => {
+          if (item.type === 'socialAd') {
+            const ad = item.data;
+            const isClaimed = claimedAds[ad.id];
+            
+            // Design colors and icons based on the ad provider channel
+            let platColor = 'bg-blue-600';
+            let platBadge = 'Facebook Sponsor';
+            let platIcon = <Facebook className="w-3.5 h-3.5" />;
+            let platBorder = 'border-blue-500/20';
+
+            if (ad.platform === 'Instagram') {
+              platColor = 'bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600';
+              platBadge = 'Instagram Carousel';
+              platIcon = <Instagram className="w-3.5 h-3.5" />;
+              platBorder = 'border-pink-500/20';
+            } else if (ad.platform === 'TikTok') {
+              platColor = 'bg-slate-950';
+              platBadge = 'TikTok Spark Ad';
+              platIcon = <Play className="w-3.5 h-3.5 text-teal-400" />;
+              platBorder = 'border-teal-500/25';
+            } else if (ad.platform === 'Twitter') {
+              platColor = 'bg-zinc-950';
+              platBadge = 'Twitter / X Promoted';
+              platIcon = <Twitter className="w-3.5 h-3.5 text-slate-300" />;
+              platBorder = 'border-slate-800';
+            } else if (ad.platform === 'LinkedIn') {
+              platColor = 'bg-blue-800';
+              platBadge = 'LinkedIn Enterprise';
+              platIcon = <Linkedin className="w-3.5 h-3.5" />;
+              platBorder = 'border-blue-700/20';
+            }
+
+            return (
+              <div 
+                key={`ad-item-${ad.id}-${idx}`} 
+                className={`bg-slate-900 border-2 ${isClaimed ? 'border-emerald-500/30' : platBorder} rounded-2xl p-4 space-y-3.5 shadow-lg relative overflow-hidden`}
+              >
+                {/* Visual highlight aura */}
+                <div className={`absolute -top-12 -right-12 w-28 h-28 ${isClaimed ? 'bg-emerald-500/5' : 'bg-blue-500/5'} rounded-full blur-2xl pointer-events-none`} />
+
+                {/* Ad Header */}
+                <div className="flex justify-between items-center">
+                  <div className="flex gap-2.5 items-center">
+                    <img
+                      src={ad.authorAvatar}
+                      alt={ad.authorName}
+                      className="w-8.5 h-8.5 rounded-full object-cover border border-slate-800"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div>
+                      <h4 className="text-xs font-black text-white flex items-center gap-1">
+                        <span>{ad.authorName}</span>
+                        <ShieldCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                      </h4>
+                      <p className="text-[8px] text-zinc-500 font-extrabold uppercase tracking-wide flex items-center gap-1">
+                        {platIcon} {platBadge}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className={`text-[8.5px] font-mono font-black ${isClaimed ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-amber-500/10 border border-amber-500/20 text-amber-500'} px-2 py-0.5 rounded-full inline-flex items-center gap-1`}>
+                    <Sparkles className="w-2.5 h-2.5" /> 
+                    {isClaimed ? 'REWARD SETTLED' : `BOOST +${(ad.rewardUSD * wallet.adDensityMultiplier).toFixed(2)} USD`}
+                  </span>
+                </div>
+
+                {/* Content */}
+                <p className="text-xs text-slate-300 leading-normal text-left">
+                  {ad.content}
+                </p>
+
+                {/* Graphic Banner */}
+                <div className="rounded-xl overflow-hidden border border-slate-950 max-h-[190px] relative group select-none bg-slate-950">
+                  <img
+                    src={ad.mediaUrl}
+                    alt="Sponsor visual"
+                    className="w-full h-full object-cover group-hover:scale-101 duration-300"
+                    referrerPolicy="no-referrer"
+                  />
+                  {/* Subtle platform watermark */}
+                  <div className="absolute bottom-2 left-2 bg-slate-950/80 px-2.5 py-1.5 rounded-lg border border-slate-850 flex items-center gap-1.5 text-[8.5px] font-bold text-slate-300">
+                    <span>{ad.platform} Ad Service</span>
+                  </div>
+
+                  {/* Dynamic hovering action button simulated over image */}
+                  <div className="absolute inset-0 bg-slate-950/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="bg-blue-600 text-white font-extrabold text-[10.5px] px-4 py-2 rounded-xl shadow-lg flex items-center gap-1 text-[10px]">
+                      {ad.ctaText} <ExternalLink className="w-3 h-3" />
+                    </span>
+                  </div>
+                </div>
+
+                {/* Interface buttons */}
+                <div className="flex flex-col sm:flex-row gap-2.5 items-center justify-between border-t border-slate-950 pt-3">
+                  <div className="flex items-center gap-2.5 text-[9px] text-slate-500 font-bold font-mono">
+                    <span className="flex items-center gap-1">
+                      <Eye className="w-3.5 h-3.5" /> Est. CPM: <span className="text-slate-300">{(ad.rewardUSD * wallet.adDensityMultiplier * 1000).toFixed(0)}</span>
+                    </span>
+                    <span>•</span>
+                    <span className="text-zinc-500">Tag: {ad.tag}</span>
+                  </div>
+
+                  {isClaimed ? (
+                    <div className="flex items-center gap-1 text-emerald-400 text-[10px] font-black uppercase bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-2 rounded-xl w-full sm:w-auto justify-center select-none animate-pulse">
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      Earnings Credited
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleClaimAdProfit(ad)}
+                      className={`w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-white shadow-md active:scale-97 cursor-pointer transition-all ${platColor} hover:brightness-110`}
+                    >
+                      <ThumbsUp className="w-3.5 h-3.5 shrink-0" />
+                      Engage & Claim +${(ad.rewardUSD * wallet.adDensityMultiplier).toFixed(2)} USD
+                    </button>
+                  )}
+                </div>
+
+              </div>
+            );
+          }
+
+          // Render normal post
+          const post = item.data;
+          return (
           <div key={post.id} className={`bg-slate-900 border ${post.isSponsored ? 'border-amber-500/30 ring-1 ring-amber-500/15' : 'border-slate-800'} rounded-2xl p-4 space-y-3.5 shadow-md relative`}>
             
             {/* Sponsored Badge Indicator inside Ad space container */}
@@ -787,7 +1102,8 @@ export default function Feed({
             </div>
 
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* STORY EXPANSION POPUP MODAL */}

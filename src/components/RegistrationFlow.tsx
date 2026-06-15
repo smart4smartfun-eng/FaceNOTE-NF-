@@ -259,9 +259,9 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
       return;
     }
 
-    // Direct user to biometric face verification step
+    // Direct user directly to success screen
     setActiveSessionUser(match);
-    setMethod('face_verification');
+    setMethod('success');
   };
 
   const handleSignupSubmit = (e: React.FormEvent) => {
@@ -313,9 +313,9 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
     const updated = [...users, newUser];
     localStorage.setItem('facenote_registered_users', JSON.stringify(updated));
 
-    // Direct user to biometric face verification step
+    // Direct user directly to success screen
     setActiveSessionUser(newUser);
-    setMethod('face_verification');
+    setMethod('success');
   };
 
   const handleLaunchFeed = () => {
