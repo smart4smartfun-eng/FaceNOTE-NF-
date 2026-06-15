@@ -218,9 +218,11 @@ interface RegistrationFlowProps {
 }
 
 export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) {
-  const [method, setMethod] = useState<'options' | 'email' | 'phone' | 'face' | 'success'>('options');
+  const [method, setMethod] = useState<'options' | 'email' | 'phone' | 'face' | 'success' | 'login'>('options');
   const [emailForm, setEmailForm] = useState({ name: '', email: '', password: '' });
   const [phoneForm, setPhoneForm] = useState({ phone: '', otp: '' });
+  const [loginForm, setLoginForm] = useState({ identifier: '', password: '' });
+  const [loginError, setLoginError] = useState('');
   const [selectedDialCode, setSelectedDialCode] = useState('+1');
   const [sentOtp, setSentOtp] = useState(false);
   const [otpError, setOtpError] = useState('');
@@ -256,8 +258,8 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
   const handleEmailRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailForm.name || !emailForm.email || !emailForm.password) return;
-    // Advance to Face verification
-    setMethod('face');
+    // Step straight to success (face verification bypass)
+    setMethod('success');
   };
 
   const handlePhoneSendOtp = () => {
@@ -279,7 +281,8 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
         email: `phone_${cleanDial}_${phoneForm.phone.replace(/[^0-9]/g, '')}@facenote.io`,
         password: 'phone-secured-login'
       });
-      setMethod('face');
+      // Step straight to success (face verification bypass)
+      setMethod('success');
     } else {
       setOtpError('Invalid authorization token. Please check SMS popup.');
     }
@@ -293,8 +296,26 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
       password: 'gmail-oauth-secured'
     };
     setEmailForm(fakeGmailUser);
-    alert('Gmail Authentication successful! Proceeding to Biometric Face Verification.');
-    setMethod('face');
+    alert('Gmail Authentication successful! Launching secure active profile.');
+    // Step straight to success (face verification bypass)
+    setMethod('success');
+  };
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginForm.identifier || !loginForm.password) return;
+    
+    // De-structure name from mail/username
+    const prefix = loginForm.identifier.includes('@') ? loginForm.identifier.split('@')[0] : loginForm.identifier;
+    const name = prefix.replace(/[._-]/g, ' ').split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+
+    setEmailForm({
+      name: name || 'Taylor Peterson',
+      email: loginForm.identifier.includes('@') ? loginForm.identifier : `${loginForm.identifier.toLowerCase().replace(/\s+/g, '')}@facenote.io`,
+      password: loginForm.password
+    });
+
+    setMethod('success');
   };
 
   // Start actual webcam access
@@ -392,7 +413,7 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
       {/* Upper Brand Info */}
       <div className="text-center mt-2 mb-4">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/15 border border-blue-500/30 rounded-full text-[11px] font-semibold text-blue-400 mb-2 tracking-wide uppercase">
-          🛡️ Military-Grade Bio-Security
+          🛡️ Secure Authentication
         </div>
         <h2 className="text-2xl font-extrabold tracking-tight text-white flex justify-center items-center gap-2">
           FaceNOTE
@@ -406,7 +427,7 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
         <div className="flex-1 flex flex-col justify-center gap-6 py-4 animate-fade-in">
           <div className="text-center space-y-1">
             <h3 className="text-base font-bold text-slate-200">Create Secure Social Identifier</h3>
-            <p className="text-[11px] text-slate-500">Pick an registration gateway. All profiles are secured on our native ad network chain.</p>
+            <p className="text-[11px] text-slate-500">Pick a registration gateway or log in directly to your profile account.</p>
           </div>
 
           <div className="space-y-3">
@@ -463,6 +484,21 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
               </div>
               <span className="text-xs text-slate-600 group-hover:text-slate-400">➔</span>
             </button>
+
+            {/* Direct Login Link */}
+            <div className="pt-3 text-center border-t border-slate-900">
+              <p className="text-xs text-slate-400">
+                Already have an account?{' '}
+                <button
+                  id="signup-to-login"
+                  type="button"
+                  onClick={() => setMethod('login')}
+                  className="text-blue-400 hover:text-blue-300 font-extrabold underline cursor-pointer hover:no-underline transition-all"
+                >
+                  Log In directly ➔
+                </button>
+              </p>
+            </div>
           </div>
 
           <div className="p-4 bg-slate-900/30 border border-slate-900 rounded-xl flex items-start gap-2.5">
@@ -472,6 +508,78 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
             </p>
           </div>
         </div>
+      )}
+
+      {/* Login Screen Panel */}
+      {method === 'login' && (
+        <form onSubmit={handleLoginSubmit} className="flex-1 flex flex-col justify-center gap-4 py-4 animate-fade-in">
+          <div className="space-y-1 mb-2">
+            <h3 className="text-base font-bold text-slate-100">Welcome Back: Log In</h3>
+            <p className="text-[10.5px] text-slate-500">Provide your password credentials to resume active sessions.</p>
+          </div>
+
+          <div className="space-y-3.5">
+            <div>
+              <label className="block text-[10.5px] text-slate-400 font-medium mb-1">Email or Username</label>
+              <div className="relative">
+                <input
+                  id="login-identifier"
+                  type="text"
+                  required
+                  placeholder="e.g. liam@gmail.com"
+                  className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition-all placeholder:text-slate-600 pl-10"
+                  value={loginForm.identifier}
+                  onChange={e => setLoginForm({ ...loginForm, identifier: e.target.value })}
+                />
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                  <Mail className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10.5px] text-slate-400 font-medium mb-1">Password</label>
+              <div className="relative">
+                <input
+                  id="login-password"
+                  type="password"
+                  required
+                  placeholder="••••••••••••"
+                  className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition-all placeholder:text-slate-600 pl-10"
+                  value={loginForm.password}
+                  onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
+                />
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                  <Lock className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {loginError && (
+            <p className="text-[10px] text-red-400 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" /> {loginError}
+            </p>
+          )}
+
+          <div className="flex gap-2.5 mt-4">
+            <button
+              id="login-back"
+              type="button"
+              onClick={() => setMethod('options')}
+              className="flex-1 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer"
+            >
+              Sign Up Options
+            </button>
+            <button
+              id="login-submit"
+              type="submit"
+              className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-blue-600/20 transition-all text-center cursor-pointer"
+            >
+              Log In Securely ➔
+            </button>
+          </div>
+        </form>
       )}
 
       {/* Email Registration Panel */}
@@ -528,16 +636,16 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
               id="reg-email-back"
               type="button"
               onClick={() => setMethod('options')}
-              className="flex-1 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 py-3 rounded-xl font-bold text-xs transition-all"
+              className="flex-1 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 py-3 rounded-xl font-bold text-xs transition-all pointer-events-auto"
             >
               Back
             </button>
             <button
               id="reg-email-submit"
               type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-blue-600/20 transition-all text-center"
+              className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-blue-600/20 transition-all text-center cursor-pointer"
             >
-              Continue to Scan
+              Create Account
             </button>
           </div>
         </form>
@@ -846,7 +954,7 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
               <span>Handle:</span> <span className="text-white font-bold">{emailForm.name}</span>
             </p>
             <p className="text-[10px] text-slate-300 flex justify-between">
-              <span>Gate Method:</span> <span className="text-emerald-400">BIOMETRIC_3D_SECURE</span>
+              <span>Gate Method:</span> <span className="text-emerald-400">{loginForm.identifier ? 'SECURE_LOGIN_PASSCODE' : 'SECURE_ENROLLMENT_TOKEN'}</span>
             </p>
             <p className="text-[10px] text-slate-300 flex justify-between">
               <span>Hash Ref:</span> <span className="text-slate-400 text-[8px]">FN_VEC_82a9sa392</span>
