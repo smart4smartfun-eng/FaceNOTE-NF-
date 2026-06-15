@@ -36,6 +36,9 @@ export interface Post {
   isGated?: boolean;
   gatePrice?: number; // USD price, default e.g. 0.99
   unlockedByMe?: boolean;
+  location?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Story {

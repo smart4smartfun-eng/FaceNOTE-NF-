@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Send, Image, Video as VideoIcon, Heart, MessageSquare, Flame, Sparkles, Share2, Eye, ShieldCheck, X } from 'lucide-react';
+import { Send, Image, Video as VideoIcon, Heart, MessageSquare, Flame, Sparkles, Share2, Eye, ShieldCheck, X, MapPin, Compass, Navigation, Info, Globe } from 'lucide-react';
 import { Post, Story, User, Comment, WalletState } from '../types';
 
 interface FeedProps {
@@ -44,6 +44,20 @@ export default function Feed({
   const [isGatingEnabled, setIsGatingEnabled] = useState(false);
   const [gatingPriceInput, setGatingPriceInput] = useState('0.99');
 
+  // Geolocation and Reverse-Geocoding states
+  const [isLocating, setIsLocating] = useState(false);
+  const [postLocation, setPostLocation] = useState('');
+  const [postLat, setPostLat] = useState<number | undefined>(undefined);
+  const [postLng, setPostLng] = useState<number | undefined>(undefined);
+  const [showLocationList, setShowLocationList] = useState(false);
+  const [locErr, setLocErr] = useState('');
+
+  // Primary User identification state for Feed banner identification
+  const [userLocName, setUserLocName] = useState<string>('Silicon Valley, CA');
+  const [userLat, setUserLat] = useState<number>(37.4220); // Google HQ near lat
+  const [userLng, setUserLng] = useState<number>(-122.0841); // Google HQ near lng
+  const [isRefreshingUserLoc, setIsRefreshingUserLoc] = useState(false);
+
   // File Upload refs
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,6 +80,129 @@ export default function Feed({
     }
   };
 
+  const POPULAR_PLACES = [
+    { name: '🗼 Shibuya Crossing, Tokyo', lat: 35.6595, lng: 139.7005 },
+    { name: '🗽 Times Square, New York', lat: 40.7580, lng: -73.9855 },
+    { name: '🎡 London Eye, London', lat: 51.5033, lng: -0.1195 },
+    { name: '🌋 Silicon Valley Tech Campus', lat: 37.4220, lng: -122.0841 },
+    { name: '🌊 Bondi Beach, Sydney', lat: -33.8915, lng: 151.2767 },
+    { name: '☕ Starbucks Reserve, Seattle', lat: 47.6140, lng: -122.3270 }
+  ];
+
+  const getDistanceKM = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const handleLocateUser = () => {
+    setIsRefreshingUserLoc(true);
+    setLocErr('');
+    if (!navigator.geolocation) {
+      setLocErr('Geolocation is not supported by your browser.');
+      setIsRefreshingUserLoc(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLat(latitude);
+        setUserLng(longitude);
+
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14`, {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'FaceNoteHub/1.0'
+            }
+          });
+          const data = await res.json();
+          if (data && data.display_name) {
+            const address = data.address;
+            const city = address.city || address.town || address.village || address.suburb || 'Selected Location';
+            const state = address.state || address.country || '';
+            setUserLocName(`${city}, ${state}`.trim().slice(0, 36));
+            onTriggerFloatingDollar('📍 LOCATED VIA GPS');
+          } else {
+            setUserLocName(`${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`);
+          }
+        } catch (e) {
+          console.error(e);
+          setUserLocName(`${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`);
+        } finally {
+          setIsRefreshingUserLoc(false);
+        }
+      },
+      (err) => {
+        console.warn('Geolocation failed inside secure sandboxed container:', err.message);
+        setLocErr('Iframe sandbox security blocked direct GPS. Please check selection below.');
+        setIsRefreshingUserLoc(false);
+        setShowLocationList(true);
+      },
+      { enableHighAccuracy: true, timeout: 6000 }
+    );
+  };
+
+  const handleLocatePost = () => {
+    setIsLocating(true);
+    setLocErr('');
+    if (!navigator.geolocation) {
+      setLocErr('Geolocation not available.');
+      setIsLocating(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setPostLat(latitude);
+        setPostLng(longitude);
+
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=16`, {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'FaceNoteHub/1.0'
+            }
+          });
+          const data = await res.json();
+          if (data && data.display_name) {
+            const address = data.address;
+            const road = address.road || '';
+            const amenity = address.amenity || address.shop || address.tourism || '';
+            const city = address.city || address.town || address.suburb || 'Local area';
+            
+            let label = amenity ? `${amenity}, ` : '';
+            if (road && !label.includes(road)) label += `${road}, `;
+            label += city;
+
+            setPostLocation(label.trim().slice(0, 42));
+          } else {
+            setPostLocation(`${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`);
+          }
+        } catch (e) {
+          setPostLocation(`${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`);
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (err) => {
+        console.warn('Post GPS permission blocked:', err.message);
+        setLocErr('GPS access blocked by sandbox. Choose a landmark or type manually below.');
+        setIsLocating(false);
+        setShowLocationList(true);
+      },
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  };
+
   const handlePublishPost = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() && !mediaPreviewUrl) return;
@@ -84,13 +221,21 @@ export default function Feed({
       impressions: 1,
       isGated: isGatingEnabled,
       gatePrice: isGatingEnabled ? price : undefined,
-      unlockedByMe: isGatingEnabled ? true : undefined
+      unlockedByMe: isGatingEnabled ? true : undefined,
+      location: postLocation || undefined,
+      latitude: postLat,
+      longitude: postLng
     };
 
     onAddPost(newPost);
     setInputText('');
     setIsGatingEnabled(false);
     setGatingPriceInput('0.99');
+    setPostLocation('');
+    setPostLat(undefined);
+    setPostLng(undefined);
+    setShowLocationList(false);
+    setLocErr('');
     clearSelectedMedia();
     
     // Add ad profit to user
@@ -202,6 +347,110 @@ export default function Feed({
         </div>
       </div>
 
+      {/* Geospace & Coordinates Tracker Hub */}
+      <div className="mx-4 mt-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg relative overflow-hidden">
+        {/* Subtle radial atmosphere */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="flex justify-between items-center border-b border-slate-800 pb-2.5 relative z-10">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 bg-blue-500/15 border border-blue-500/35 text-blue-400 rounded-xl">
+              <Compass className="w-4 h-4 animate-spin-slow" />
+            </span>
+            <div>
+              <h3 className="text-xs font-black uppercase text-indigo-400 tracking-wider">FaceNOTE Geospace Tracker</h3>
+              <p className="text-[9px] text-slate-500 font-semibold">Sat-GPS Satellite Location Telemetry</p>
+            </div>
+          </div>
+          <button
+            id="gps-scan-recalculate"
+            type="button"
+            onClick={handleLocateUser}
+            disabled={isRefreshingUserLoc}
+            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-extrabold text-[9.5px] px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-md shadow-blue-600/10"
+          >
+            <Navigation className={`w-3 h-3 ${isRefreshingUserLoc ? 'animate-bounce' : ''}`} />
+            {isRefreshingUserLoc ? 'Scanning...' : 'Identify GPS'}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1 relative z-10">
+          {/* Identified Position detail */}
+          <div className="space-y-1.5">
+            <span className="text-[8.5px] text-slate-500 font-extrabold uppercase tracking-widest block">Landmark / Country Point</span>
+            <div className="flex items-start gap-2">
+              <MapPin className="w-4 h-4 text-rose-500 shrink-0 mt-0.5 animate-pulse" />
+              <div>
+                <p className="text-[11px] text-slate-200 font-bold leading-tight truncate max-w-[190px]">
+                  {userLocName}
+                </p>
+                <code className="text-[8.5px] text-slate-500 font-mono block mt-1 bg-slate-950 px-1 py-0.5 rounded border border-slate-850 w-fit">
+                  LAT: {userLat.toFixed(4)}° / LNG: {userLng.toFixed(4)}°
+                </code>
+              </div>
+            </div>
+            
+            {/* Quick-Change GPS Teleport Sandbox selector */}
+            <div className="pt-1.5 pb-0.5">
+              <label className="text-[8.5px] text-slate-600 font-extrabold uppercase tracking-widest block mb-1">Sandbox Teleport Simulation:</label>
+              <div className="flex flex-wrap gap-1">
+                {POPULAR_PLACES.map((place) => (
+                  <button
+                    key={place.name}
+                    id={`teleport-city-${place.name.replace(/\s+/g, '-').toLowerCase()}`}
+                    type="button"
+                    onClick={() => {
+                      setUserLocName(place.name.replace(/[🗼🗽🎡🌋🌊☕]\s+/, ''));
+                      setUserLat(place.lat);
+                      setUserLng(place.lng);
+                      onTriggerFloatingDollar(`📍 Teleported to ${place.name.split(',')[0]}!`);
+                    }}
+                    className="bg-slate-950 hover:bg-slate-850 border border-slate-850 text-slate-400 hover:text-white rounded px-1.5 py-0.5 text-[8px] transition-all cursor-pointer font-bold leading-none"
+                  >
+                    {place.name.split(',')[0]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Haversine distance tracking and mock compass needle visual */}
+          <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-850 flex items-center justify-between gap-1.5">
+            <div className="space-y-1">
+              <span className="text-[8px] text-slate-500 font-extrabold uppercase tracking-widest block">Geodesic Telemetry</span>
+              <p className="text-[9.5px] text-slate-400 font-medium leading-none">
+                Distance to <span className="text-blue-400">Valley Server</span>:
+              </p>
+              <p className="text-xs font-black text-emerald-400 font-mono">
+                {getDistanceKM(userLat, userLng, 37.4220, -122.0841).toLocaleString(undefined, { maximumFractionDigits: 1 })} km
+              </p>
+              <span className="text-[8.5px] text-slate-500 block leading-tight">
+                Directional Bearing: <span className="text-slate-350 font-bold">{-Math.round((userLng + 122.0841) * 0.8) % 360}° NW</span>
+              </span>
+            </div>
+            
+            {/* Visual compass ring */}
+            <div className="w-11 h-11 rounded-full border border-slate-850 bg-slate-950 flex items-center justify-center relative shrink-0 shadow-inner select-none">
+              <span className="absolute text-[6px] text-slate-650 top-0.5 font-extrabold">N</span>
+              <span className="absolute text-[6px] text-slate-650 bottom-0.5 font-extrabold">S</span>
+              {/* Spinning needle */}
+              <div 
+                className="w-0.5 h-6 bg-gradient-to-t from-transparent via-rose-500 to-rose-600 rounded-full transition-transform duration-700"
+                style={{ transform: `rotate(${-Math.round((userLng + 122) * 2.2) % 360}deg)` }}
+              />
+              <div className="absolute w-1 h-1 bg-slate-200 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        {locErr && (
+          <p className="text-[9px] text-amber-500/90 bg-amber-500/5 border border-amber-500/15 p-2 rounded-xl font-medium leading-normal flex items-start gap-1 relative z-10 animate-fade-in">
+            <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <span>{locErr}</span>
+          </p>
+        )}
+      </div>
+
       {/* Write a Post Section */}
       <form onSubmit={handlePublishPost} className="m-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
         <div className="flex gap-3">
@@ -268,14 +517,110 @@ export default function Feed({
           )}
         </div>
 
+        {/* Selected Location Pill Display */}
+        {postLocation && (
+          <div className="bg-slate-950/50 border border-slate-850 p-2.5 rounded-xl flex items-center justify-between text-[10.5px] animate-fade-in">
+            <span className="flex items-center gap-1.5 text-rose-400 font-semibold truncate">
+              <MapPin className="w-3.5 h-3.5 shrink-0 animate-pulse" />
+              <span>Checked in: <span className="text-white font-bold">{postLocation}</span></span>
+              {postLat && <span className="text-[9.5px] font-mono text-slate-500">({postLat.toFixed(3)}, {postLng?.toFixed(3)})</span>}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setPostLocation('');
+                setPostLat(undefined);
+                setPostLng(undefined);
+              }}
+              className="text-slate-500 hover:text-white font-bold text-xs px-1.5 hover:bg-slate-900 rounded"
+              title="Clear attached location"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {isLocating && (
+          <div className="bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 text-center text-slate-400 text-[10px] flex items-center justify-center gap-2 font-medium">
+            <Compass className="w-3.5 h-3.5 text-blue-400 animate-spin" />
+            📡 Contacting satellites... identifying geographic location...
+          </div>
+        )}
+
+        {/* Popular check-in select picker */}
+        {showLocationList && (
+          <div className="bg-slate-950 border border-slate-850 rounded-xl p-3 space-y-2.5 animate-fade-in text-left">
+            <div className="flex justify-between items-center border-b border-slate-900 pb-1.5">
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-400 flex items-center gap-1">
+                <Globe className="w-3.5 h-3.5 animate-spin-slow" />
+                GPS Landmark Sandbox Select
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowLocationList(false)}
+                className="text-[9px] text-slate-500 hover:text-white font-bold"
+              >
+                ✕ Close
+              </button>
+            </div>
+            
+            {locErr && (
+              <p className="text-[9px] text-amber-500 bg-amber-500/5 border border-amber-500/15 p-1.5 rounded leading-relaxed font-semibold">
+                ⚠️ {locErr}
+              </p>
+            )}
+
+            {/* Custom address manual input */}
+            <div className="space-y-1">
+              <label className="text-[8.5px] text-slate-500 font-bold uppercase block">Enter Custom Address / Landmark:</label>
+              <input
+                id="geo-manual-address-input"
+                type="text"
+                placeholder="Starbucks, Paris, Central Park..."
+                className="w-full bg-slate-900 border border-slate-850 rounded-lg p-2 text-xs text-white outline-none focus:border-blue-500"
+                value={postLocation}
+                onChange={e => {
+                  setPostLocation(e.target.value);
+                  if (!postLat) {
+                    setPostLat(37.7749 + Math.random() * 0.1);
+                    setPostLng(-122.4194 - Math.random() * 0.1);
+                  }
+                }}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[8.5px] text-slate-500 font-bold uppercase block">Or Fast Check-In nearby places:</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {POPULAR_PLACES.map((place) => (
+                  <button
+                    key={place.name}
+                    type="button"
+                    onClick={() => {
+                      setPostLocation(place.name.replace(/[🗼🗽🎡🌋🌊☕]\s+/, ''));
+                      setPostLat(place.lat);
+                      setPostLng(place.lng);
+                      setShowLocationList(false);
+                      onTriggerFloatingDollar('📍 Sandbox landmark tagged!');
+                    }}
+                    className="text-left bg-slate-900 hover:bg-slate-850 border border-slate-800 rounded-lg p-1.5 text-[9.5px] text-slate-300 hover:text-white transition-all truncate cursor-pointer"
+                  >
+                    {place.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Actions bar for file trigger triggers */}
         <div className="flex items-center justify-between border-t border-slate-950 pt-3">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button
               id="feed-upload-image"
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-950 hover:bg-slate-850 text-slate-400 hover:text-white rounded-lg border border-slate-850 text-[10.5px] transition-all font-semibold"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-950 hover:bg-slate-850 text-slate-400 hover:text-white rounded-lg border border-slate-850 text-[10.5px] transition-all font-semibold"
             >
               <Image className="w-3.5 h-3.5 text-emerald-400" />
               Photo
@@ -284,10 +629,20 @@ export default function Feed({
               id="feed-upload-video"
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-950 hover:bg-slate-850 text-slate-400 hover:text-white rounded-lg border border-slate-850 text-[10.5px] transition-all font-semibold"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-950 hover:bg-slate-850 text-slate-400 hover:text-white rounded-lg border border-slate-850 text-[10.5px] transition-all font-semibold"
             >
               <VideoIcon className="w-3.5 h-3.5 text-blue-400" />
               Video Clip
+            </button>
+            <button
+              id="feed-upload-location"
+              type="button"
+              onClick={handleLocatePost}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-950 hover:bg-slate-850 text-slate-400 hover:text-white rounded-lg border border-slate-850 text-[10.5px] transition-all font-semibold"
+              title="Detect physical location using satellite telemetry GPS"
+            >
+              <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+              Check In
             </button>
             <input
               ref={fileInputRef}
@@ -332,9 +687,15 @@ export default function Feed({
                   referrerPolicy="no-referrer"
                 />
                 <div>
-                  <h4 className="text-xs font-bold text-white flex items-center gap-1">
-                    {post.authorName}
-                    {!post.isSponsored && <ShieldCheck className="w-3.5 h-3.5 text-blue-500 cursor-pointer" />}
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1 flex-wrap">
+                    <span>{post.authorName}</span>
+                    {!post.isSponsored && <ShieldCheck className="w-3.5 h-3.5 text-blue-500 cursor-pointer inline shrink-0" />}
+                    {post.location && (
+                      <span className="text-[8.5px] bg-rose-500/10 border border-rose-500/20 text-rose-400 font-semibold px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0 ml-1 leading-none select-none">
+                        <MapPin className="w-2.5 h-2.5" />
+                        {post.location}
+                      </span>
+                    )}
                   </h4>
                   <p className="text-[9.5px] text-slate-500">{post.timestamp}</p>
                 </div>

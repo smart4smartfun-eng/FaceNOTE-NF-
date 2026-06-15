@@ -94,6 +94,9 @@ export const INITIAL_POSTS: Post[] = [
     mediaUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80',
     likes: 142,
     timestamp: '2 hours ago',
+    location: 'Seattle, WA',
+    latitude: 47.6062,
+    longitude: -122.3321,
     comments: [
       {
         id: 'c1',
@@ -143,6 +146,9 @@ export const INITIAL_POSTS: Post[] = [
     mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-ocean-near-shore-43026-large.mp4',
     likes: 84,
     timestamp: '4 hours ago',
+    location: 'Malibu Coast, CA',
+    latitude: 34.0259,
+    longitude: -118.7798,
     isGated: true,
     gatePrice: 1.49,
     unlockedByMe: false,

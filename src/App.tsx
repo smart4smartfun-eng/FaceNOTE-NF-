@@ -87,25 +87,21 @@ export default function App() {
     }, 2000);
   };
 
-  // Auto-schedule occasional mock inbound calls for supreme interactivity!
+  // Central global Traffic Mining monetization ticker - persists across all tabs and views!
   useEffect(() => {
-    const callTimer = setTimeout(() => {
-      // Trigger inbound call after 30 seconds if user is logged in
-      if (user && callSession.status === 'none') {
-        const randomFriend = friends[Math.floor(Math.random() * friends.length)];
-        setCallSession({
-          status: 'incoming',
-          mode: 'video',
-          peer: randomFriend,
-          durationSeconds: 0,
-          localStreamActive: true,
-          audioMuted: false
-        });
-      }
-    }, 35000);
-
-    return () => clearTimeout(callTimer);
-  }, [user, friends, callSession.status]);
+    let interval: NodeJS.Timeout | null = null;
+    if (user && wallet.trafficMiningActive) {
+      interval = setInterval(() => {
+        setWallet(prev => ({
+          ...prev,
+          balanceUSD: prev.balanceUSD + prev.miningRatePerSecond
+        }));
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [user, wallet.trafficMiningActive, wallet.miningRatePerSecond]);
 
   // Feed Operations
   const handleAddPost = (newPost: Post) => {

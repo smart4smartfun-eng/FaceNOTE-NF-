@@ -305,6 +305,9 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
     setFaceVectors([]);
 
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Webcam API is not supported or is blocked in this browser context.');
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 400, height: 300, facingMode: 'user' },
         audio: false
@@ -695,13 +698,22 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
                   <button
                     id="reg-face-camera-start"
                     onClick={startCamera}
-                    className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center gap-2 p-4 text-center group transition-all"
+                    className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center gap-2 p-4 text-center group transition-all animate-fade-in"
                   >
                     <div className="p-3 bg-blue-500/10 text-blue-400 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white rounded-full transition-all">
                       <Camera className="w-6 h-6 animate-pulse" />
                     </div>
                     <span className="text-xs font-bold text-white">Enable Front Face Camera</span>
                     <span className="text-[10px] text-slate-500 max-w-xs">Requires system permissions. Captures depth layout metrics safely.</span>
+                    <span 
+                      onClick={(e) => {
+                        e.stopPropagation(); // Avoid parent click triggering startCamera
+                        setUseFallbackScan(true);
+                      }}
+                      className="mt-4 px-3 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-300 hover:text-white border border-slate-800 rounded-xl text-[10px] font-bold tracking-wide transition-all cursor-pointer select-none"
+                    >
+                      Or Use Virtual Simulator Scanner ➔
+                    </span>
                   </button>
                 )}
               </div>

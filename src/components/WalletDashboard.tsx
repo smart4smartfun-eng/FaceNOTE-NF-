@@ -16,22 +16,6 @@ export default function WalletDashboard({ wallet, onUpdateWallet, onTriggerFloat
   const [withdrawTarget, setWithdrawTarget] = useState('smart4smartfun@gmail.com');
   const [showPayoutStatus, setShowPayoutStatus] = useState(false);
 
-  // Tick up balance in real-time when Traffic Mining is active!
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (wallet.trafficMiningActive) {
-      interval = setInterval(() => {
-        onUpdateWallet(prev => ({
-          ...prev,
-          balanceUSD: prev.balanceUSD + prev.miningRatePerSecond
-        }));
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [wallet.trafficMiningActive, wallet.miningRatePerSecond, onUpdateWallet]);
-
   const handleToggleMining = () => {
     onUpdateWallet(prev => {
       const isNowActive = !prev.trafficMiningActive;
