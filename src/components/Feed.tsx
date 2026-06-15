@@ -489,34 +489,6 @@ export default function Feed({
           </div>
         )}
 
-        {/* Premium Gating Toggles */}
-        <div className="bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 flex items-center justify-between gap-3 text-[10.5px]">
-          <label className="flex items-center gap-2 cursor-pointer text-slate-300 font-semibold select-none">
-            <input
-              id="feed-toggle-gating"
-              type="checkbox"
-              checked={isGatingEnabled}
-              onChange={e => setIsGatingEnabled(e.target.checked)}
-              className="rounded accent-blue-500 scale-105"
-            />
-            ⭐ Set Unlock Price to View Post
-          </label>
-          {isGatingEnabled && (
-            <div className="flex items-center gap-1">
-              <span className="text-slate-400 font-mono font-bold">$</span>
-              <input
-                id="feed-gating-price"
-                type="number"
-                step="0.01"
-                className="w-16 bg-slate-900 border border-slate-850 rounded text-center text-white py-1 font-mono text-[10.5px] outline-none focus:border-blue-500"
-                value={gatingPriceInput}
-                onChange={e => setGatingPriceInput(e.target.value)}
-              />
-              <span className="text-slate-500 font-medium">USD</span>
-            </div>
-          )}
-        </div>
-
         {/* Selected Location Pill Display */}
         {postLocation && (
           <div className="bg-slate-950/50 border border-slate-850 p-2.5 rounded-xl flex items-center justify-between text-[10.5px] animate-fade-in">
@@ -713,63 +685,31 @@ export default function Feed({
               )}
             </div>
 
-            {post.isGated && !post.unlockedByMe ? (
-              <div className="bg-slate-950/80 border border-amber-500/25 rounded-2xl p-4.5 text-center space-y-4 relative overflow-hidden my-1 shadow-inner">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
-                <div className="text-xl animate-bounce">🔒</div>
-                <div className="space-y-1">
-                  <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest">Premium Content Gated</h4>
-                  <p className="text-[10px] text-zinc-300 leading-relaxed max-w-[90%] mx-auto font-medium">
-                    This selection is gated by the creator. Pay <span className="text-emerald-400 font-bold font-mono">${(post.gatePrice || 0.99).toFixed(2)} USD</span> to instantly unlock media, details, comments & likes.
-                  </p>
-                </div>
-                
-                <div className="flex gap-2 justify-center max-w-[90%] mx-auto">
-                  <button
-                    id={`unlock-coins-${post.id}`}
-                    onClick={() => handleUnlockPost(post.id, 'coins')}
-                    className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-amber-400 font-bold py-2 rounded-xl text-[10px] transition-all flex items-center justify-center gap-1 active:scale-95 cursor-pointer shadow-md"
-                  >
-                    🪙 10 Coins
-                  </button>
-                  <button
-                    id={`unlock-stripe-${post.id}`}
-                    onClick={() => handleUnlockPost(post.id, 'card')}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-505 text-white font-extrabold py-2 rounded-xl text-[10px] transition-all flex items-center justify-center gap-1 active:scale-95 cursor-pointer shadow-lg shadow-indigo-600/15"
-                  >
-                    💳 Card • ${(post.gatePrice || 0.99).toFixed(2)}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Post Content */}
-                <p className="text-xs text-slate-300 leading-normal font-sans">
-                  {post.content}
-                </p>
+            {/* Post Content */}
+            <p className="text-xs text-slate-300 leading-normal font-sans text-left">
+              {post.content}
+            </p>
 
-                {/* Post Media Rendering */}
-                {post.mediaUrl && (
-                  <div className="rounded-xl overflow-hidden border border-slate-800/60 bg-slate-950">
-                    {post.type === 'video' ? (
-                      <video
-                        src={post.mediaUrl}
-                        controls
-                        loop
-                        playsInline
-                        className="w-full max-h-[280px] object-cover"
-                      />
-                    ) : (
-                      <img
-                        src={post.mediaUrl}
-                        alt="Timeline Attachment"
-                        className="w-full max-h-[280px] object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    )}
-                  </div>
+            {/* Post Media Rendering */}
+            {post.mediaUrl && (
+              <div className="rounded-xl overflow-hidden border border-slate-800/60 bg-slate-950">
+                {post.type === 'video' ? (
+                  <video
+                    src={post.mediaUrl}
+                    controls
+                    loop
+                    playsInline
+                    className="w-full max-h-[280px] object-cover"
+                  />
+                ) : (
+                  <img
+                    src={post.mediaUrl}
+                    alt="Timeline Attachment"
+                    className="w-full max-h-[280px] object-cover"
+                    referrerPolicy="no-referrer"
+                  />
                 )}
-              </>
+              </div>
             )}
 
             {/* Interaction Stats and Ads Trigger buttons */}

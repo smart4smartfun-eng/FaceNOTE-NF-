@@ -1,6 +1,6 @@
 {
   "name": "FaceNoteHub",
-  "description": "A fully featured, high-converting social platform with authentic Facebook-style layouts, a right-aligned FN logo, multi-method registration (including dynamic biometric Face Scan), simulated live video/voice calls, and a custom monetization workspace that prints real-time earnings based on user engagement.",
+  "description": "A high-fidelity social platform named FaceNOTE, matching classic Facebook-style signup grids and login fields, dynamic profile authentication, integrated social media ad units, multi-media timeline feeds, voice-call triggers, and secure P2P messaging.",
   "requestFramePermissions": [
     "camera",
     "microphone",

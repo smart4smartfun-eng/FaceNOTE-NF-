@@ -5,19 +5,11 @@ import DeviceSimulator from './components/DeviceSimulator';
 import RegistrationFlow from './components/RegistrationFlow';
 import Feed from './components/Feed';
 import Messenger from './components/Messenger';
-import WalletDashboard from './components/WalletDashboard';
 import ProfileView from './components/ProfileView';
 import ActiveCallOverlay from './components/ActiveCallOverlay';
 
 // Lucide Icons
 import { Heart, MessageCircle, Landmark, UserCheck, Sparkles, BellRing } from 'lucide-react';
-
-interface FloatingCoin {
-  id: string;
-  x: number;
-  y: number;
-  label: string;
-}
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -25,20 +17,17 @@ export default function App() {
   const [stories, setStories] = useState<Story[]>(INITIAL_STORIES);
   const [friends, setFriends] = useState<Friend[]>(INITIAL_FRIENDS);
   const [selectedFriendId, setSelectedFriendId] = useState<string>(INITIAL_FRIENDS[0]?.id || '');
-  const [activeTab, setActiveTab] = useState<'feed' | 'messenger' | 'wallet' | 'profile'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'messenger' | 'profile'>('feed');
 
-  // Monetization and Earnings State
+  // Monetization state is now a dummy fallback state for sub-components
   const [wallet, setWallet] = useState<WalletState>({
-    balanceUSD: 142.8251, // Starts with seed earnings for high conversion satisfaction
-    totalWithdrawn: 1480.00,
-    fnCoins: 85,
-    adDensityMultiplier: 2.5,
-    trafficMiningActive: true,
-    miningRatePerSecond: 0.025, // Pays $0.025 per second when active
-    withdrawals: [
-      { id: 'w_p1', amount: 500, method: 'PayPal', status: 'Processed', timestamp: '2 days ago' },
-      { id: 'w_p2', amount: 980, method: 'Crypto (Solana/USDT)', status: 'Processed', timestamp: '5 days ago' }
-    ]
+    balanceUSD: 0,
+    totalWithdrawn: 0,
+    fnCoins: 0,
+    adDensityMultiplier: 1.0,
+    trafficMiningActive: false,
+    miningRatePerSecond: 0,
+    withdrawals: []
   });
 
   // Call overlay configurations
@@ -50,58 +39,18 @@ export default function App() {
     localStreamActive: true,
     audioMuted: false
   });
-
-  // Floating money effect particles for gamification
-  const [floatingCoins, setFloatingCoins] = useState<FloatingCoin[]>([]);
   
-  // Custom social alert push notification state
+  // Custom social alert push notification state for campaigns
   const [activeAdNotification, setActiveAdNotification] = useState<string | null>(null);
 
-  // Trigger floating dollar reward indicator
-  const triggerFloatingDollar = (customLabel = '+$0.15 AD VALUE') => {
-    const id = 'coin_' + Date.now() + Math.random().toString(36).substr(2, 5);
-    const newCoin: FloatingCoin = {
-      id,
-      x: 30 + Math.random() * 40, // percentage from left
-      y: 70 - Math.random() * 20, // percentage from top
-      label: customLabel
-    };
-    
-    setFloatingCoins(prev => [...prev, newCoin]);
-
-    // Also increase balance directly as user acts!
-    setWallet(prev => ({
-      ...prev,
-      balanceUSD: prev.balanceUSD + 0.15,
-      fnCoins: prev.fnCoins + 1
-    }));
-
-    // Generate random notification for high active vibe
-    const sponsors = ['NordVPN', 'Shopify Plus', 'Coursera Premium', 'Solana Pay', 'Stripe Developer Bundle'];
-    const selectedSponsorByChance = sponsors[Math.floor(Math.random() * sponsors.length)];
-    setActiveAdNotification(`Sponsored Action verified by ${selectedSponsorByChance}!`);
+  // Trigger generic high-fidelity social alert notifications
+  const triggerFloatingDollar = (customLabel = '') => {
+    // Generate notification for native social engagement
+    const campaigns = ['Nike Running Hub', 'Xbox Game Pass', 'Disney+ Premium', 'Apple Music', 'Google Developer Group'];
+    const selectedCampaign = campaigns[Math.floor(Math.random() * campaigns.length)];
+    setActiveAdNotification(`New Campaign Action: Verified by ${selectedCampaign}!`);
     setTimeout(() => setActiveAdNotification(null), 3500);
-
-    setTimeout(() => {
-      setFloatingCoins(prev => prev.filter(c => c.id !== id));
-    }, 2000);
   };
-
-  // Central global Traffic Mining monetization ticker - persists across all tabs and views!
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (user && wallet.trafficMiningActive) {
-      interval = setInterval(() => {
-        setWallet(prev => ({
-          ...prev,
-          balanceUSD: prev.balanceUSD + prev.miningRatePerSecond
-        }));
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [user, wallet.trafficMiningActive, wallet.miningRatePerSecond]);
 
   // Feed Operations
   const handleAddPost = (newPost: Post) => {
@@ -272,17 +221,22 @@ export default function App() {
           </div>
         </div>
 
-        {/* REQUIRED LOGO AT THE RIGHT HAND: "FN" */}
+        {/* Profile indicator links to profile */}
         <div 
-          className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/20 rounded-xl font-bold cursor-pointer hover:indigo-505 duration-200 active:scale-95 shadow-md shadow-blue-600/10"
+          className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-755 border border-slate-700/60 rounded-xl cursor-pointer duration-200 active:scale-95 shadow-sm"
           onClick={() => {
-            if (user) setActiveTab('wallet');
+            if (user) setActiveTab('profile');
           }}
         >
-          <span className="text-[10px] text-blue-200 uppercase tracking-widest font-extrabold select-none">Coin Hub</span>
-          <div className="w-5.5 h-5.5 bg-white text-indigo-700 rounded-full flex items-center justify-center text-[10.5px] font-black shadow-lg">
-            FN
-          </div>
+          <img 
+            src={user ? user.avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+            alt="" 
+            className="w-5.5 h-5.5 rounded-full object-cover border border-slate-600"
+            referrerPolicy="no-referrer"
+          />
+          <span className="text-[10px] text-slate-300 font-bold max-w-[80px] truncate select-none">
+            {user ? user.name.split(' ')[0] : 'Log In'}
+          </span>
         </div>
       </header>
 
@@ -323,14 +277,6 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'wallet' && (
-              <WalletDashboard
-                wallet={wallet}
-                onUpdateWallet={setWallet}
-                onTriggerFloatingDollar={triggerFloatingDollar}
-              />
-            )}
-
             {activeTab === 'profile' && (
               <ProfileView
                 user={user}
@@ -352,23 +298,6 @@ export default function App() {
                 </p>
               </div>
             )}
-
-            {/* Float rewards coin particle effect when user conducts transactions */}
-            {floatingCoins.map(coin => (
-              <div
-                key={coin.id}
-                className="absolute text-emerald-400 font-mono text-[10.5px] font-extrabold z-45 bg-slate-950/80 px-2.5 py-1 rounded-full border border-emerald-500/30 select-none pointer-events-none shadow-xl flex items-center gap-1.5"
-                style={{
-                  left: `${coin.x}%`,
-                  bottom: `${coin.y}%`,
-                  animation: 'scan 1.8s infinite ease-out',
-                  transition: 'all 1.5s ease-out'
-                }}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-                {coin.label}
-              </div>
-            ))}
 
             {/* Active video / audio communication dial overlays */}
             <ActiveCallOverlay
@@ -401,19 +330,6 @@ export default function App() {
                 <span className="text-lg">💬</span>
                 <span className="text-[8.5px] font-bold tracking-wider uppercase">Chats</span>
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full border border-slate-900" />
-              </button>
-
-              <button
-                id="footer-tab-wallet"
-                onClick={() => setActiveTab('wallet')}
-                className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl cursor-pointer transition-all ${
-                  activeTab === 'wallet' ? 'text-emerald-500 scale-105' : 'text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                <span className="text-lg">💼</span>
-                <span className="text-[8.5px] font-mono font-black text-emerald-400">
-                  ${wallet.balanceUSD.toFixed(2)}
-                </span>
               </button>
 
               <button

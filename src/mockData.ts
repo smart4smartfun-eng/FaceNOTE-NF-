@@ -117,25 +117,25 @@ export const INITIAL_POSTS: Post[] = [
   },
   {
     id: 'sponsor1',
-    authorName: 'FaceNOTE Premium Services',
-    authorAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150',
-    content: '💸 REVENUE GENERATOR SPONSOR: The more users engage with FaceNOTE, the larger our ad network payouts! Sign up for custom monetization triggers and get 2.5x traffic farming bonuses inside your Wallet immediately.',
+    authorName: 'Nike Running Hub',
+    authorAvatar: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=150',
+    content: '👟 Meet the all-new Nike Air VaporMax. Designed for real-time responsiveness, maximum cushioning, and breathable engineered mesh. Experience running on air today. Free shipping & returns on all membership orders! 💨✨ #JustDoIt',
     type: 'image',
-    mediaUrl: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&auto=format&fit=crop&q=80',
-    likes: 928,
+    mediaUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80',
+    likes: 1284,
     timestamp: 'Sponsored Ad Space',
     isSponsored: true,
-    sponsorUrl: 'https://google.ai/studio',
+    sponsorUrl: 'https://www.nike.com',
     comments: [
       {
         id: 'cs1',
-        authorName: 'FaceNOTE System Bot',
-        authorAvatar: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=150',
-        text: 'Earn passive rewards. Active status updates pay out 0.05 FN Coins every minute!',
-        timestamp: 'Just now'
+        authorName: 'Sarah Jenkins',
+        authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+        text: 'Wow, these looks incredible! Adding the neon pink colorway to my cart right now.',
+        timestamp: '30m ago'
       }
     ],
-    impressions: 3951
+    impressions: 5931
   },
   {
     id: 'p2',
@@ -149,9 +149,6 @@ export const INITIAL_POSTS: Post[] = [
     location: 'Malibu Coast, CA',
     latitude: 34.0259,
     longitude: -118.7798,
-    isGated: true,
-    gatePrice: 1.49,
-    unlockedByMe: false,
     comments: [
       {
         id: 'c3',
