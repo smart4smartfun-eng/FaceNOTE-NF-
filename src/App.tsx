@@ -7,6 +7,7 @@ import Feed from './components/Feed';
 import Messenger from './components/Messenger';
 import ProfileView from './components/ProfileView';
 import ActiveCallOverlay from './components/ActiveCallOverlay';
+import PaymentMentor from './components/PaymentMentor';
 
 // Lucide Icons
 import { Heart, MessageCircle, Landmark, UserCheck, Sparkles, BellRing } from 'lucide-react';
@@ -27,18 +28,62 @@ export default function App() {
   const [stories, setStories] = useState<Story[]>(INITIAL_STORIES);
   const [friends, setFriends] = useState<Friend[]>(INITIAL_FRIENDS);
   const [selectedFriendId, setSelectedFriendId] = useState<string>(INITIAL_FRIENDS[0]?.id || '');
-  const [activeTab, setActiveTab] = useState<'feed' | 'messenger' | 'profile'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'messenger' | 'profile' | 'withdrawal'>('feed');
 
-  // Monetization state is now a dummy fallback state for sub-components
-  const [wallet, setWallet] = useState<WalletState>({
-    balanceUSD: 0,
-    totalWithdrawn: 0,
-    fnCoins: 0,
-    adDensityMultiplier: 1.0,
-    trafficMiningActive: false,
-    miningRatePerSecond: 0,
-    withdrawals: []
+  // Monetization state
+  const [wallet, setWallet] = useState<WalletState>(() => {
+    const saved = localStorage.getItem('facenote_wallet');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return {
+      balanceUSD: 15.45, // Decent starting earnings to facilitate immediate testing!
+      totalWithdrawn: 0,
+      fnCoins: 85,
+      adDensityMultiplier: 1.0,
+      trafficMiningActive: false,
+      miningRatePerSecond: 0,
+      withdrawals: [],
+      founderBalanceUSD: 145.50 // Pre-filled seed for demonstration
+    };
   });
+
+  // Automatically compute and route 3% of any positive money generated to founder wallet
+  const handleUpdateWallet = (updater: WalletState | ((prev: WalletState) => WalletState)) => {
+    setWallet(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      
+      // Calculate how much the user's balance increased
+      const diff = next.balanceUSD - prev.balanceUSD;
+      
+      // Get previous or existing founder balance (default to 145.50 if not specified yet)
+      const prevFounderBalance = prev.founderBalanceUSD !== undefined ? prev.founderBalanceUSD : 145.50;
+      
+      // If the updater explicitly edited founderBalanceUSD (e.g. founder withdraw transaction),
+      // we use that target amount. otherwise, we carry it over.
+      let targetFounderBalance = next.founderBalanceUSD !== undefined ? next.founderBalanceUSD : prevFounderBalance;
+      
+      if (diff > 0) {
+        // Generate extra 3% of newly generated user earnings for the founder wallet!
+        const fee = diff * 0.03;
+        targetFounderBalance = +(targetFounderBalance + fee);
+      }
+      
+      return {
+        ...next,
+        founderBalanceUSD: +(targetFounderBalance).toFixed(4)
+      };
+    });
+  };
+
+  // Automatically persist any wallet changes
+  useEffect(() => {
+    localStorage.setItem('facenote_wallet', JSON.stringify(wallet));
+  }, [wallet]);
 
   // Call overlay configurations
   const [callSession, setCallSession] = useState<CallSession>({
@@ -270,7 +315,7 @@ export default function App() {
                 onLikePost={handleLikePost}
                 onAddComment={handleAddComment}
                 onTriggerFloatingDollar={triggerFloatingDollar}
-                onUpdateWallet={setWallet}
+                onUpdateWallet={handleUpdateWallet}
                 onUpdatePosts={setPosts}
                 onStartChat={handleStartChat}
               />
@@ -298,6 +343,15 @@ export default function App() {
                   setUser(null);
                   setActiveTab('feed');
                 }}
+              />
+            )}
+
+            {activeTab === 'withdrawal' && (
+              <PaymentMentor
+                user={user}
+                wallet={wallet}
+                onUpdateWallet={handleUpdateWallet}
+                onTriggerFloatingDollar={triggerFloatingDollar}
               />
             )}
 
@@ -353,6 +407,17 @@ export default function App() {
               >
                 <span className="text-lg">👤</span>
                 <span className="text-[8.5px] font-bold tracking-wider uppercase">Profile</span>
+              </button>
+
+              <button
+                id="footer-tab-withdrawal"
+                onClick={() => setActiveTab('withdrawal')}
+                className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl cursor-pointer transition-all ${
+                  activeTab === 'withdrawal' ? 'text-blue-500 scale-105' : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <span className="text-lg">🏛️</span>
+                <span className="text-[8.5px] font-bold tracking-wider uppercase text-center truncate w-full">Payouts</span>
               </button>
 
             </footer>

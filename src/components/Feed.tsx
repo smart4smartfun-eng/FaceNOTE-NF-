@@ -14,6 +14,7 @@ interface MockSocialAd {
   tag: string;
   rewardUSD: number;
   rewardCoins: number;
+  isVideo?: boolean;
 }
 
 const MOCK_SOCIAL_ADS: MockSocialAd[] = [
@@ -23,11 +24,12 @@ const MOCK_SOCIAL_ADS: MockSocialAd[] = [
     authorName: 'MasterClass Sponsored',
     authorAvatar: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100',
     content: '🎓 Unleash your creativity. Learn screenwriting from Aaron Sorkin, scientific negotiation skills from Chris Voss, or gourmet cooking from Gordon Ramsay. Access 180+ courses. Access is limited so click below to claim your standard startup code today! 🌟',
-    mediaUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop&q=80',
+    mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-curry-being-prepared-in-a-gourmet-kitchen-39912-large.mp4',
+    isVideo: true,
     ctaText: 'Learn More',
-    tag: 'CPC $0.15',
-    rewardUSD: 0.15,
-    rewardCoins: 5
+    tag: 'CPC $4.50',
+    rewardUSD: 4.50,
+    rewardCoins: 45
   },
   {
     id: 'shad_insta_airbnb',
@@ -35,11 +37,12 @@ const MOCK_SOCIAL_ADS: MockSocialAd[] = [
     authorName: 'airbnb_destinations',
     authorAvatar: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=100',
     content: '🌴 Secluded beach views, rustic forest retreats, or modern glass penthouses. Wherever you feel like heading, airbnb has a cozy, vetted host ready to hand over the keys. Find yours! #travelblogger #sunsetcoast',
-    mediaUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
+    mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-by-the-pool-looking-at-sea-view-40032-large.mp4',
+    isVideo: true,
     ctaText: 'Book Now',
     tag: 'CTR 3.4%',
-    rewardUSD: 0.20,
-    rewardCoins: 8
+    rewardUSD: 6.80,
+    rewardCoins: 68
   },
   {
     id: 'shad_tiktok_gymshark',
@@ -47,11 +50,12 @@ const MOCK_SOCIAL_ADS: MockSocialAd[] = [
     authorName: 'gymshark_official',
     authorAvatar: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=100',
     content: '🔥 Engineered with ultra-light fabrics, seamless breathable fits, and premium zero-frictional seams. The Gymshark Essential collection is made to survive your heaviest workouts. Tap "Shop Now" with code FACENOTE15 for checkout discount. 🏆🏋️ #gymshark',
-    mediaUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&auto=format&fit=crop&q=80',
+    mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-athlete-running-on-the-treadmill-34440-large.mp4',
+    isVideo: true,
     ctaText: 'Shop Now',
-    tag: 'CPM $0.35',
-    rewardUSD: 0.35,
-    rewardCoins: 12
+    tag: 'CPM $7.25',
+    rewardUSD: 7.25,
+    rewardCoins: 85
   },
   {
     id: 'shad_twitter_openai',
@@ -59,11 +63,12 @@ const MOCK_SOCIAL_ADS: MockSocialAd[] = [
     authorName: 'OpenAI Developer Hub',
     authorAvatar: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=100',
     content: '🤖 Streamline agent workflows natively. The new Google GenAI Node SDK provides fully async real-time tool calling routing, direct multimodal audio input, and low-latency system-instruction presets out of the box. ⚡ #OpenAI #BuildAgent',
-    mediaUrl: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=600&auto=format&fit=crop&q=80',
+    mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-keyboard-typing-in-the-dark-866-large.mp4',
+    isVideo: true,
     ctaText: 'Try API Now',
-    tag: 'CPC $0.12',
-    rewardUSD: 0.12,
-    rewardCoins: 4
+    tag: 'CPC $5.50',
+    rewardUSD: 5.50,
+    rewardCoins: 60
   },
   {
     id: 'shad_linkedin_google',
@@ -71,11 +76,12 @@ const MOCK_SOCIAL_ADS: MockSocialAd[] = [
     authorName: 'Google Cloud Careers',
     authorAvatar: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=100',
     content: '🚀 Google is expanding cloud engineering teams globally! We are seeking Senior Software Engineers & DevOps Architect Champions to scale multi-region server databases. Click to view open opportunities and salary ranges! #LifeAtGoogle',
-    mediaUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&auto=format&fit=crop&q=80',
+    mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4',
+    isVideo: true,
     ctaText: 'Apply Job',
-    tag: 'CPM $0.45',
-    rewardUSD: 0.45,
-    rewardCoins: 15
+    tag: 'CPM $8.40',
+    rewardUSD: 8.40,
+    rewardCoins: 100
   }
 ];
 
@@ -901,16 +907,28 @@ export default function Feed({
                 </p>
 
                 {/* Graphic Banner */}
-                <div className="rounded-xl overflow-hidden border border-slate-950 max-h-[190px] relative group select-none bg-slate-950">
-                  <img
-                    src={ad.mediaUrl}
-                    alt="Sponsor visual"
-                    className="w-full h-full object-cover group-hover:scale-101 duration-300"
-                    referrerPolicy="no-referrer"
-                  />
+                <div className="rounded-xl overflow-hidden border border-slate-950 max-h-[220px] relative group select-none bg-slate-950">
+                  {ad.isVideo ? (
+                    <video
+                      src={ad.mediaUrl}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      className="w-full h-full min-h-[170px] max-h-[225px] object-cover group-hover:scale-101 duration-300"
+                    />
+                  ) : (
+                    <img
+                      src={ad.mediaUrl}
+                      alt="Sponsor visual"
+                      className="w-full h-full object-cover group-hover:scale-101 duration-300"
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
                   {/* Subtle platform watermark */}
-                  <div className="absolute bottom-2 left-2 bg-slate-950/80 px-2.5 py-1.5 rounded-lg border border-slate-850 flex items-center gap-1.5 text-[8.5px] font-bold text-slate-300">
-                    <span>{ad.platform} Ad Service</span>
+                  <div className="absolute bottom-2 left-2 bg-slate-950/85 px-2.5 py-1.5 rounded-lg border border-slate-850 flex items-center gap-1.5 text-[8.5px] font-bold text-slate-300 shadow bg-slate-950/90 gap-1 select-none">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping inline-block shrink-0" />
+                    <span>{ad.platform} Live Ad {ad.isVideo ? 'Stream' : 'Service'}</span>
                   </div>
 
                   {/* Dynamic hovering action button simulated over image */}

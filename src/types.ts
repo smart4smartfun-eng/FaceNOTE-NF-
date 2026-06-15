@@ -118,5 +118,6 @@ export interface WalletState {
   isProMember?: boolean;
   adBoosterActive?: boolean;
   paymentConfig?: PaymentSetup;
+  founderBalanceUSD?: number; // Hiding wallet for 3% founder commission fee
 }
 

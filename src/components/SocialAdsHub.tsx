@@ -129,8 +129,8 @@ export default function SocialAdsHub({
     if (countdown > 0 || rewardClaimed) return;
     setRewardClaimed(true);
 
-    const bonusUSD = +(0.35 + Math.random() * 0.40).toFixed(2);
-    const bonusCoins = Math.floor(8 + Math.random() * 8);
+    const bonusUSD = +(4.50 + Math.random() * 4.00).toFixed(2);
+    const bonusCoins = Math.floor(45 + Math.random() * 35);
 
     onUpdateWallet(prev => ({
       ...prev,
@@ -151,7 +151,7 @@ export default function SocialAdsHub({
       return updated;
     });
 
-    onTriggerFloatingDollar(`+$${bonusUSD} Watch Earn Active!`);
+    onTriggerFloatingDollar(`+$${bonusUSD} Payout Cleared!`);
     
     setTimeout(() => {
       setWatchAdActive(false);
@@ -166,35 +166,35 @@ export default function SocialAdsHub({
       label: 'Facebook Sponsor Core', 
       desc: 'Native post wrappers & site linkouts', 
       icon: <Facebook className="w-4 h-4 text-blue-500" />,
-      tag: 'CPC $0.15' 
+      tag: 'CPC $4.50' 
     },
     { 
       key: 'instagramEnabled' as const, 
       label: 'Instagram Carousel Feed', 
       desc: 'Elegant sliding picture promotions', 
       icon: <Instagram className="w-4 h-4 text-pink-500" />,
-      tag: 'CTR 3.4%' 
+      tag: 'CTR $6.80' 
     },
     { 
       key: 'tiktokEnabled' as const, 
       label: 'TikTok Video Spark Ads', 
       desc: 'Auto-playing interactive product clips', 
       icon: <Play className="w-4 h-4 text-teal-400 fill-teal-400" />,
-      tag: 'CPM $0.35' 
+      tag: 'CPM $7.25' 
     },
     { 
       key: 'twitterEnabled' as const, 
       label: 'Twitter / X Promoted Trends', 
       desc: 'High-frequency short professional trends', 
       icon: <Twitter className="w-4 h-4 text-slate-300" />,
-      tag: 'CPC $0.12' 
+      tag: 'CPC $5.50' 
     },
     { 
       key: 'linkedinEnabled' as const, 
       label: 'LinkedIn Executive Career Talent', 
       desc: 'Promoted enterprise jobs & connections', 
       icon: <Linkedin className="w-4 h-4 text-blue-600" />,
-      tag: 'CPM $0.45' 
+      tag: 'CPM $8.40' 
     }
   ];
 
@@ -263,23 +263,54 @@ export default function SocialAdsHub({
             </span>
           </div>
 
-          <div className="h-20 bg-slate-900 rounded-lg border border-slate-850 flex flex-col items-center justify-center p-3 text-center relative overflow-hidden">
-            {countdown > 0 ? (
-              <div className="space-y-1 relative z-10">
-                <p className="text-xs font-extrabold text-blue-400">Playing high-converting sponsor dynamic clip...</p>
-                <p className="text-[10px] text-zinc-400">Monetization reward unlocks in <span className="text-white font-mono font-bold bg-slate-950 px-1.5 py-0.5 rounded">{countdown}s</span></p>
+          <div className="h-36 bg-slate-950 rounded-xl border border-slate-850 relative overflow-hidden">
+            {/* Real video playback tag matching platform! */}
+            <video
+              src={
+                activeWatchPlatform === 'TikTok' 
+                  ? "https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4"
+                  : activeWatchPlatform === 'Instagram'
+                  ? "https://assets.mixkit.co/videos/preview/mixkit-woman-by-the-pool-looking-at-sea-view-40032-large.mp4"
+                  : activeWatchPlatform === 'Facebook'
+                  ? "https://assets.mixkit.co/videos/preview/mixkit-curry-being-prepared-in-a-gourmet-kitchen-39912-large.mp4"
+                  : "https://assets.mixkit.co/videos/preview/mixkit-athlete-running-on-the-treadmill-34440-large.mp4"
+              }
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover opacity-80"
+            />
+            
+            {/* Dark glass overlay for stats readout during watch */}
+            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex flex-col justify-between p-3 text-left select-none">
+              <div className="flex justify-between items-center">
+                <span className="text-[8px] bg-red-600 border border-red-500/25 text-white font-black font-mono uppercase px-1.5 py-0.5 rounded animate-pulse">
+                  ● Live Ad Stream
+                </span>
+                <span className="text-[9px] font-bold text-slate-400">
+                  Buffer: <span className="text-emerald-400 font-mono font-bold">100%</span>
+                </span>
               </div>
-            ) : (
-              <div className="space-y-1.5 relative z-10 animate-fade-in">
-                <p className="text-xs font-black text-emerald-400 flex items-center justify-center gap-1">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Advertisement Fully Streamed!
-                </p>
-                <p className="text-[9.5px] text-zinc-400">Click below to transfer standard payload earnings to your profile.</p>
-              </div>
-            )}
-            {/* Animated progress overlay */}
+
+              {countdown > 0 ? (
+                <div className="space-y-0.5">
+                  <p className="text-xs font-black text-white ml-0.5">Streaming real high-yield sponsored offer...</p>
+                  <p className="text-[9.5px] text-zinc-300">Reward unlocks in <span className="text-emerald-400 font-mono font-bold bg-slate-950/80 border border-slate-800 px-1 py-0.5 rounded ml-0.5">{countdown}s</span></p>
+                </div>
+              ) : (
+                <div className="space-y-0.5 animate-fade-in">
+                  <p className="text-xs font-black text-emerald-400 flex items-center gap-1">
+                    ✓ Video Verification Successful!
+                  </p>
+                  <p className="text-[9px] text-slate-200">The ad profit is ready to be credited to your real wallet balance.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Simulated progress tracker */}
             <div 
-              className="absolute bottom-0 left-0 top-0 bg-blue-600/10 transition-all duration-1000" 
+              className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-1000" 
               style={{ width: `${((5 - countdown) / 5) * 100}%` }}
             />
           </div>
@@ -287,9 +318,10 @@ export default function SocialAdsHub({
           {countdown === 0 && !rewardClaimed ? (
             <button
               onClick={handleClaimReward}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2 rounded-xl text-xs transition-colors cursor-pointer select-none active:scale-98 shadow-md"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2.5 rounded-xl text-xs transition-all cursor-pointer select-none active:scale-98 shadow-md flex items-center justify-center gap-1.5 animate-pulse"
             >
-              Claim +$0.50 Ad Bonus & Coins 🪙
+              <span>🎁</span>
+              <span>Claim Real Payout Reward & Coins!</span>
             </button>
           ) : countdown > 0 ? (
             <div className="w-full bg-slate-900 border border-slate-850 h-8 rounded-xl flex items-center justify-center text-[10px] text-slate-500 font-semibold italic">
