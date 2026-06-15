@@ -163,27 +163,53 @@ export default function PaymentMentor({ user, wallet, onUpdateWallet, onTriggerF
   // Withdraw Feature States
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [withdrawalMethod, setWithdrawalMethod] = useState<'PayPal' | 'Bank Transfer' | 'Crypto (Solana/USDT)' | 'Apple Pay'>('PayPal');
-  const [withdrawalDestination, setWithdrawalDestination] = useState('');
+  const [withdrawalDestination, setWithdrawalDestination] = useState(() => {
+    return wallet.paymentConfig?.paypalEmail || user?.email || '';
+  });
   const [withdrawalError, setWithdrawalError] = useState('');
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
   const [withdrawalStepMessage, setWithdrawalStepMessage] = useState('');
   const [withdrawalStepNum, setWithdrawalStepNum] = useState(0);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
 
-  // Sync destination details with PayPal config
+  // Sync destination details with PayPal config only on load or initial settings connection
+  const hasInitializedSync = React.useRef(false);
   React.useEffect(() => {
-    if (wallet.paymentConfig?.paypalEmail && withdrawalMethod === 'PayPal') {
-      setWithdrawalDestination(wallet.paymentConfig.paypalEmail);
-    } else if (withdrawalMethod === 'Bank Transfer') {
-      setWithdrawalDestination(wallet.paymentConfig?.stripeSecretKey ? 'Connected Stripe Bank Node' : 'Simulator Routing Node');
-    } else if (withdrawalMethod === 'Crypto (Solana/USDT)') {
-      setWithdrawalDestination('Sol39281...9zKx');
-    } else if (withdrawalMethod === 'Apple Pay') {
-      setWithdrawalDestination('Device Apple Cash Secure Element');
-    } else {
-      setWithdrawalDestination('');
+    if (!hasInitializedSync.current) {
+      if (wallet.paymentConfig?.paypalEmail && withdrawalMethod === 'PayPal') {
+        setWithdrawalDestination(wallet.paymentConfig.paypalEmail);
+        hasInitializedSync.current = true;
+      }
     }
-  }, [wallet.paymentConfig?.paypalEmail, withdrawalMethod, wallet.paymentConfig?.stripeSecretKey]);
+  }, [wallet.paymentConfig?.paypalEmail, withdrawalMethod]);
+
+  const selectWithdrawalMethod = (method: 'PayPal' | 'Bank Transfer' | 'Crypto (Solana/USDT)' | 'Apple Pay') => {
+    setWithdrawalMethod(method);
+    if (method === 'PayPal') {
+      setWithdrawalDestination(wallet.paymentConfig?.paypalEmail || user?.email || '');
+    } else if (method === 'Bank Transfer') {
+      setWithdrawalDestination(wallet.paymentConfig?.stripeSecretKey ? 'Connected Stripe Bank Node' : '');
+    } else if (method === 'Crypto (Solana/USDT)') {
+      setWithdrawalDestination('');
+    } else if (method === 'Apple Pay') {
+      setWithdrawalDestination(user?.phoneNumber || '');
+    }
+  };
+
+  const getDestinationPlaceholder = () => {
+    switch (withdrawalMethod) {
+      case 'PayPal':
+        return 'e.g. paypal-recipient@example.com';
+      case 'Bank Transfer':
+        return 'e.g. Bank Account or Swift Routing standard';
+      case 'Crypto (Solana/USDT)':
+        return 'e.g. Sol39281...9zKx Solana Wallet Address';
+      case 'Apple Pay':
+        return 'e.g. +1 (555) 019-2834 or Apple ID email';
+      default:
+        return 'Enter destination account details';
+    }
+  };
 
   // Handler to simulate the secure withdraw steps
   const handleExecuteWithdrawal = (e: React.FormEvent) => {
@@ -864,7 +890,7 @@ export default function PaymentMentor({ user, wallet, onUpdateWallet, onTriggerF
                       <button
                         key={method.id}
                         type="button"
-                        onClick={() => setWithdrawalMethod(method.id as any)}
+                        onClick={() => selectWithdrawalMethod(method.id as any)}
                         className={`p-2 rounded-xl border text-[10px] font-semibold transition-all text-left flex items-center gap-1.5 cursor-pointer ${
                           withdrawalMethod === method.id 
                             ? 'bg-blue-600/10 border-blue-500 text-white font-bold' 
@@ -885,8 +911,8 @@ export default function PaymentMentor({ user, wallet, onUpdateWallet, onTriggerF
                       id="withdrawal-destination-input"
                       type="text"
                       required
-                      placeholder="e.g. paypal-recipient@example.com"
-                      className="w-full bg-slate-900 border border-slate-850 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none font-sans"
+                      placeholder={getDestinationPlaceholder()}
+                      className="w-full bg-slate-900 border border-slate-855 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none font-sans"
                       value={withdrawalDestination}
                       onChange={e => setWithdrawalDestination(e.target.value)}
                     />

@@ -59,13 +59,24 @@ const getRegisteredUsers = (): RegisteredUser[] => {
 };
 
 export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) {
-  const [method, setMethod] = useState<'login' | 'signup' | 'face_verification' | 'success'>('login');
+  const [method, setMethod] = useState<'login' | 'signup' | 'face_verification' | 'success' | 'forgot_password'>('login');
   
   // Login input states
   const [loginForm, setLoginForm] = useState({ identifier: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [keepMeSignedIn, setKeepMeSignedIn] = useState(true);
+
+  // Forgot password interactive states
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [forgotStep, setForgotStep] = useState<'email' | 'otp' | 'new_password' | 'done'>('email');
+  const [generatedOTP, setGeneratedOTP] = useState('');
+  const [userEnteredOTP, setUserEnteredOTP] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [foundUser, setFoundUser] = useState<RegisteredUser | null>(null);
 
   // Real Facebook layout signup states
   const [signupForm, setSignupForm] = useState({
@@ -265,6 +276,84 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
     // Direct user directly to success screen
     setActiveSessionUser(match);
     setMethod('success');
+  };
+
+  // --- FORGOT PASSWORD SUBMIT HANDLERS ---
+  const handleForgotEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotSuccess('');
+    const emailVal = forgotEmail.trim().toLowerCase();
+
+    if (!emailVal) {
+      setForgotError('Please enter your account email address.');
+      return;
+    }
+
+    const users = getRegisteredUsers();
+    const match = users.find(u => u.email.toLowerCase() === emailVal);
+
+    if (!match) {
+      setForgotError("No registered user has been found with this email. Please check typing.");
+      return;
+    }
+
+    // Generate a simple secure code
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOTP(otp);
+    setFoundUser(match);
+    setForgotStep('otp');
+    setForgotSuccess(`Security verification pin dispatched! Please verify credentials below.`);
+    
+    // Simulate notifying user of their code
+    console.log(`[FaceNote Reset Code for ${emailVal}]: ${otp}`);
+    setTimeout(() => {
+      alert(`🔑 [SECURITY NOTICE] Your recovery code is: ${otp}\n(We simulated a direct inbox router packet bypass for testing.)`);
+    }, 400);
+  };
+
+  const handleForgotOTPSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotSuccess('');
+
+    if (userEnteredOTP.trim() !== generatedOTP) {
+      setForgotError('Incorrect validation security PIN. Please verify the code and try again.');
+      return;
+    }
+
+    setForgotStep('new_password');
+    setForgotSuccess('Security token approved! Now please establish your secure new login passcode.');
+  };
+
+  const handleForgotResetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotSuccess('');
+
+    if (newPassword.length < 4) {
+      setForgotError('Password must be at least 4 characters long.');
+      return;
+    }
+
+    if (!foundUser) {
+      setForgotError('Unexpected session state. Please restart recovery.');
+      setForgotStep('email');
+      return;
+    }
+
+    // Save the new password to local database
+    const users = getRegisteredUsers();
+    const updated = users.map(u => {
+      if (u.email.toLowerCase() === foundUser.email.toLowerCase()) {
+        return { ...u, password: newPassword };
+      }
+      return u;
+    });
+
+    localStorage.setItem('facenote_registered_users', JSON.stringify(updated));
+    setForgotStep('done');
+    setForgotSuccess('Authentication passcode updated successfully! You can now log into your profile.');
   };
 
   const handleSignupSubmit = (e: React.FormEvent) => {
@@ -472,9 +561,19 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
             </button>
 
             <div className="text-center pt-2">
-              <span className="text-[10px] text-slate-500 hover:underline cursor-pointer">
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotEmail(loginForm.identifier);
+                  setForgotError('');
+                  setForgotSuccess('');
+                  setForgotStep('email');
+                  setMethod('forgot_password');
+                }}
+                className="text-[10px] text-blue-400 hover:text-blue-300 hover:underline cursor-pointer bg-transparent border-none outline-none font-bold"
+              >
                 Forgotten password?
-              </span>
+              </button>
             </div>
 
             <div className="border-t border-slate-800 pt-4 flex justify-center">
@@ -838,6 +937,202 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* FORGOT PASSWORD SCREEN */}
+      {method === 'forgot_password' && (
+        <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full gap-5 py-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-xl text-left">
+            <div className="text-center pb-2 border-b border-slate-800">
+              <h3 className="text-sm font-bold text-slate-200 uppercase tracking-widest flex items-center justify-center gap-1.5 font-mono">
+                <ShieldCheck className="w-4 h-4 text-blue-500 animate-pulse" /> 
+                Password Recovery
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Recover your FaceNOTE profile credentials safely
+              </p>
+            </div>
+
+            {forgotError && (
+              <div className="text-[10.5px] text-red-450 bg-red-400/5 border border-red-400/15 p-2.5 rounded-xl flex items-start gap-1.5 font-medium leading-relaxed">
+                <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                <span>{forgotError}</span>
+              </div>
+            )}
+
+            {forgotSuccess && (
+              <div className="text-[10.5px] text-emerald-450 bg-emerald-500/5 border border-emerald-500/15 p-2.5 rounded-xl flex items-start gap-1.5 font-medium leading-relaxed">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                <span>{forgotSuccess}</span>
+              </div>
+            )}
+
+            {/* STEP 1: ENTER EMAIL */}
+            {forgotStep === 'email' && (
+              <form onSubmit={handleForgotEmailSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-[10.5px] text-slate-400 font-semibold mb-1 uppercase tracking-wide">
+                    Account Email Address
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. smart4smartfun@gmail.com"
+                      className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition-all placeholder:text-slate-600 pl-10"
+                      value={forgotEmail}
+                      onChange={e => setForgotEmail(e.target.value)}
+                    />
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-blue-600/20 transition-all text-center cursor-pointer active:scale-98"
+                >
+                  Send Verification PIN
+                </button>
+              </form>
+            )}
+
+            {/* STEP 2: VERIFY OTP */}
+            {forgotStep === 'otp' && (
+              <form onSubmit={handleForgotOTPSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-[10.5px] text-slate-400 font-semibold mb-1 uppercase tracking-wide">
+                    Type 6-Digit PIN Code
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      required
+                      placeholder="xxxxxx"
+                      className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition-all placeholder:text-slate-600 font-mono text-center tracking-widest text-lg"
+                      value={userEnteredOTP}
+                      onChange={e => setUserEnteredOTP(e.target.value.replace(/\D/g, ''))}
+                    />
+                  </div>
+                  <p className="text-[9px] text-slate-500 mt-1 italic text-center">
+                    Check your alerts. Simulated PIN sent automatically.
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotStep('email');
+                      setForgotError('');
+                      setForgotSuccess('');
+                    }}
+                    className="flex-1 bg-slate-950 hover:bg-slate-850 text-slate-400 border border-slate-800 py-2.5 rounded-xl font-bold text-xs text-center cursor-pointer"
+                  >
+                    Back
+                  </button>
+                  
+                  <button
+                    type="submit"
+                    className="flex-[2] bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all text-center cursor-pointer active:scale-98"
+                  >
+                    Approve PIN ➔
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* STEP 3: ESTABLISH NEW PASSWORD */}
+            {forgotStep === 'new_password' && (
+              <form onSubmit={handleForgotResetPassword} className="space-y-4">
+                <div>
+                  <label className="block text-[10.5px] text-slate-400 font-semibold mb-1 uppercase tracking-wide">
+                    New Account Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      required
+                      placeholder="Min 4 characters"
+                      className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition-all placeholder:text-slate-600 pl-10 pr-10"
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                    />
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 focus:outline-none cursor-pointer border-none bg-transparent"
+                      title={showNewPassword ? "Hide password" : "Show password"}
+                    >
+                      {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-emerald-600/20 transition-all text-center cursor-pointer active:scale-98"
+                >
+                  Save New Password
+                </button>
+              </form>
+            )}
+
+            {/* STEP 4: COMPLETED DONE */}
+            {forgotStep === 'done' && (
+              <div className="space-y-4 text-center">
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Your safety security passcode has been updated successfully. You can now access your FaceNOTE profile safely.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMethod('login');
+                    setForgotStep('email');
+                    setForgotEmail('');
+                    setForgotSuccess('');
+                    setForgotError('');
+                    setNewPassword('');
+                    setUserEnteredOTP('');
+                    setGeneratedOTP('');
+                    setFoundUser(null);
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-xs shadow-lg text-center cursor-pointer"
+                >
+                  Return to Log In ➔
+                </button>
+              </div>
+            )}
+
+            {/* Cancel return back option */}
+            {forgotStep !== 'done' && (
+              <div className="text-center pt-2 border-t border-slate-800/60 mt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMethod('login');
+                    setForgotStep('email');
+                    setForgotEmail('');
+                    setForgotSuccess('');
+                    setForgotError('');
+                    setNewPassword('');
+                    setUserEnteredOTP('');
+                    setGeneratedOTP('');
+                    setFoundUser(null);
+                  }}
+                  className="text-[10px] text-slate-400 hover:text-slate-200 transition-colors font-semibold"
+                >
+                  Cancel & Go Back
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
