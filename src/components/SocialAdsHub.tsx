@@ -268,17 +268,18 @@ export default function SocialAdsHub({
             <video
               src={
                 activeWatchPlatform === 'TikTok' 
-                  ? "https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4"
+                  ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
                   : activeWatchPlatform === 'Instagram'
-                  ? "https://assets.mixkit.co/videos/preview/mixkit-woman-by-the-pool-looking-at-sea-view-40032-large.mp4"
+                  ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
                   : activeWatchPlatform === 'Facebook'
-                  ? "https://assets.mixkit.co/videos/preview/mixkit-curry-being-prepared-in-a-gourmet-kitchen-39912-large.mp4"
-                  : "https://assets.mixkit.co/videos/preview/mixkit-athlete-running-on-the-treadmill-34440-large.mp4"
+                  ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4"
+                  : "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
               }
               autoPlay
               muted
               loop
               playsInline
+              controls
               className="w-full h-full object-cover opacity-80"
             />
             

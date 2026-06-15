@@ -27,7 +27,7 @@ export const INITIAL_STORIES: Story[] = [
     id: 's4',
     userName: 'David K.',
     userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-    mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-trees-in-the-wind-with-sun-beams-42353-large.mp4',
+    mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
     isVideo: true,
     isViewed: false
   }
@@ -143,7 +143,7 @@ export const INITIAL_POSTS: Post[] = [
     authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
     content: 'Check out this beautiful ocean motion capture wave video I filmed near the California coast! FaceNOTE handles full HD frame uploads with zero lag. Let me know what you think of the color grade!',
     type: 'video',
-    mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-ocean-near-shore-43026-large.mp4',
+    mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
     likes: 84,
     timestamp: '4 hours ago',
     location: 'Malibu Coast, CA',
