@@ -165,11 +165,13 @@ export default function Feed({
     }
   };
 
-  const clearSelectedMedia = () => {
+  const clearSelectedMedia = (shouldRevoke = true) => {
     setMediaFile(null);
     setMediaType(null);
     if (mediaPreviewUrl) {
-      URL.revokeObjectURL(mediaPreviewUrl);
+      if (shouldRevoke) {
+        URL.revokeObjectURL(mediaPreviewUrl);
+      }
       setMediaPreviewUrl(null);
     }
   };
@@ -330,7 +332,7 @@ export default function Feed({
     setPostLng(undefined);
     setShowLocationList(false);
     setLocErr('');
-    clearSelectedMedia();
+    clearSelectedMedia(false);
     
     // Add ad profit to user
     onTriggerFloatingDollar('+$0.25 POST CREATED Bonus');
@@ -1030,6 +1032,8 @@ export default function Feed({
                   <video
                     src={post.mediaUrl}
                     controls
+                    autoPlay
+                    muted
                     loop
                     playsInline
                     className="w-full max-h-[280px] object-cover"
