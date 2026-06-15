@@ -277,9 +277,10 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'profile' && (
+            {activeTab === 'profile' && user && (
               <ProfileView
                 user={user}
+                onUpdateUser={setUser}
                 posts={posts}
                 wallet={wallet}
                 onLogOut={() => {

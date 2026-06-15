@@ -9,6 +9,16 @@ export interface User {
   isFaceVerified: boolean;
   faceScanData?: string; // Mock face vector summary
   isOnline: boolean;
+  
+  // Custom enriched profile details
+  bio?: string;
+  hometown?: string;
+  currentCity?: string;
+  relationshipStatus?: string;
+  workplace?: string;
+  education?: string;
+  website?: string;
+  hobbies?: string[];
 }
 
 export interface Comment {

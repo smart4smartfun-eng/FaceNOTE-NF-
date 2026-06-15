@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Mail, Lock, CheckCircle2, AlertCircle, Sparkles, User, Calendar, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Mail, Lock, CheckCircle2, AlertCircle, Sparkles, User, Calendar, RefreshCw, Camera, Video, Activity, ShieldCheck, UserCheck } from 'lucide-react';
 import { User as UserType } from '../types';
 
 interface RegistrationFlowProps {
@@ -59,7 +59,7 @@ const getRegisteredUsers = (): RegisteredUser[] => {
 };
 
 export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) {
-  const [method, setMethod] = useState<'login' | 'signup' | 'success'>('login');
+  const [method, setMethod] = useState<'login' | 'signup' | 'face_verification' | 'success'>('login');
   
   // Login input states
   const [loginForm, setLoginForm] = useState({ identifier: '', password: '' });
@@ -81,10 +81,156 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
   // Authenticated profile intermediate container
   const [activeSessionUser, setActiveSessionUser] = useState<RegisteredUser | null>(null);
 
+  // Real face scanning states
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanStatus, setScanStatus] = useState('Position face inside camera frame to begin scan.');
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [useAsAvatar, setUseAsAvatar] = useState(true);
+  const [randomStats, setRandomStats] = useState({
+    pitch: 0.1,
+    yaw: -0.2,
+    roll: 0.0,
+    confidence: 0.992,
+    brightness: 82,
+  });
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const [laserPos, setLaserPos] = useState(10);
+  useEffect(() => {
+    if (isScanning) {
+      const interval = setInterval(() => {
+        setLaserPos(pos => {
+          if (pos >= 90) return 10;
+          return pos + 5;
+        });
+      }, 80);
+      return () => clearInterval(interval);
+    }
+  }, [isScanning]);
+
   // Initialize and load registered database
   useEffect(() => {
     getRegisteredUsers();
   }, []);
+
+  // Handle active webcam stream creation or release
+  useEffect(() => {
+    if (method === 'face_verification') {
+      let activeStream: MediaStream | null = null;
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+        .then(s => {
+          activeStream = s;
+          setStream(s);
+          setCameraActive(true);
+          setCameraError('');
+          if (videoRef.current) {
+            videoRef.current.srcObject = s;
+          }
+        })
+        .catch(err => {
+          console.error("Camera permissions check failed:", err);
+          setCameraActive(false);
+          setCameraError("Unable to open device camera or permission was denied. You may proceed with simulated high-fidelity facial authorization.");
+        });
+
+      return () => {
+        if (activeStream) {
+          activeStream.getTracks().forEach(track => track.stop());
+        }
+      };
+    }
+  }, [method]);
+
+  const handleStartScan = () => {
+    if (isScanning) return;
+    setIsScanning(true);
+    setScanProgress(0);
+    setScanStatus('Aligning dynamic scanning matrix...');
+
+    const interval = setInterval(() => {
+      setScanProgress(prev => {
+        const next = prev + 5;
+        
+        // Update live processing signals to feel highly dynamic and real!
+        setRandomStats({
+          pitch: +(Math.sin(next / 10) * 0.4).toFixed(3),
+          yaw: +(Math.cos(next / 10) * 0.5).toFixed(3),
+          roll: +(Math.sin(next / 20) * 0.1).toFixed(3),
+          confidence: +(0.95 + (Math.random() * 0.049)).toFixed(3),
+          brightness: Math.floor(75 + (Math.random() * 15)),
+        });
+
+        if (next === 15) {
+          setScanStatus('Face detected. Pinpointing biometric landmark points...');
+        } else if (next === 35) {
+          setScanStatus('Reconstructing facial mesh (78 Key points mapped). Checking fit... [OK]');
+        } else if (next === 55) {
+          setScanStatus('Analyzing pupil spacing, jawline angle, and skin thermal reflection...');
+        } else if (next === 75) {
+          setScanStatus('Matching facial signature hash with local security credentials token...');
+        } else if (next === 90) {
+          setScanStatus('Encoding verified credentials signature matrix...');
+        } else if (next >= 100) {
+          clearInterval(interval);
+          
+          // Complete scan action - capture webcam photo if active!
+          let finalPhoto = null;
+          if (cameraActive && videoRef.current && canvasRef.current) {
+            const canvas = canvasRef.current;
+            const video = videoRef.current;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              canvas.width = 400;
+              canvas.height = 400;
+              // Mirror effect for front-facing selfie
+              ctx.translate(canvas.width, 0);
+              ctx.scale(-1, 1);
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              
+              // Draw cosmetic target overlays directly onto preview snapshot!
+              ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+              ctx.strokeStyle = '#3b82f6';
+              ctx.lineWidth = 3;
+              ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+              
+              ctx.font = 'bold 12px monospace';
+              ctx.fillStyle = '#3b82f6';
+              ctx.fillText('FACENOTE SECURE FACE SCAN', 20, 35);
+              ctx.fillText(`VERIFIED SECURE: ${new Date().toLocaleTimeString()}`, 20, 55);
+              
+              finalPhoto = canvas.toDataURL('image/jpeg');
+              setCapturedPhoto(finalPhoto);
+            }
+          } else {
+            // Simulated backup selfie
+            setCapturedPhoto("https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80");
+          }
+          
+          setScanStatus('Facial scanning complete! Biometric passcode generated successfully.');
+          setIsScanning(false);
+          return 100;
+        }
+        return next;
+      });
+    }, 150);
+  };
+
+  const handleProceedAfterScan = () => {
+    if (activeSessionUser) {
+      const updatedUser = { ...activeSessionUser };
+      if (capturedPhoto && useAsAvatar) {
+        updatedUser.avatar = capturedPhoto;
+      }
+      setActiveSessionUser(updatedUser);
+      setMethod('success');
+    }
+  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,9 +259,9 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
       return;
     }
 
-    // Success Authentication
+    // Direct user to biometric face verification step
     setActiveSessionUser(match);
-    setMethod('success');
+    setMethod('face_verification');
   };
 
   const handleSignupSubmit = (e: React.FormEvent) => {
@@ -167,9 +313,9 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
     const updated = [...users, newUser];
     localStorage.setItem('facenote_registered_users', JSON.stringify(updated));
 
-    // Save active authentication context
+    // Direct user to biometric face verification step
     setActiveSessionUser(newUser);
-    setMethod('success');
+    setMethod('face_verification');
   };
 
   const handleLaunchFeed = () => {
@@ -183,7 +329,26 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
         isRegistered: true,
         isGmailAuthed: activeSessionUser.email.includes('gmail'),
         isFaceVerified: true,
-        isOnline: true
+        faceScanData: capturedPhoto || undefined,
+        isOnline: true,
+        bio: activeSessionUser.name === 'Taylor Peterson' 
+          ? 'Exploring FaceNOTE. Lover of classic design paradigms, run training, and clean software architecture. 🚀'
+          : activeSessionUser.name === 'Sarah Jenkins'
+          ? 'Community developer & outdoor photographer. Always chasing sunsets! 🏞️'
+          : 'Reconnecting on FaceNOTE! Feel free to leave a post or send a direct wave.',
+        workplace: activeSessionUser.name === 'Taylor Peterson'
+          ? 'Lead Engineer at Tech Corp'
+          : activeSessionUser.name === 'Sarah Jenkins'
+          ? 'UI Designer & Photographer'
+          : 'Design lead at FaceNote Creative',
+        education: 'Stanford University',
+        currentCity: 'Redwood City, California',
+        hometown: 'Seattle, Washington',
+        relationshipStatus: activeSessionUser.name === 'Taylor Peterson' ? 'Single' : 'In a relationship',
+        website: 'https://facenote.io/me',
+        hobbies: activeSessionUser.name === 'Taylor Peterson'
+          ? ["⚽ Sports", "💻 Coding", "☕ Coffee", "🏋️ Fitness"]
+          : ["📸 Photography", "✈️ Travel", "🎨 Painting", "🎸 Music"]
       };
       onComplete(finalUser);
     }
@@ -455,6 +620,186 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* FACE VERIFICATION GATE */}
+      {method === 'face_verification' && activeSessionUser && (
+        <div className="flex-1 flex flex-col justify-between items-center max-w-sm mx-auto w-full gap-4 py-2 text-center animate-fade-in font-sans">
+          <div className="space-y-1">
+            <h3 className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 flex items-center justify-center gap-2">
+              <Sparkles className="w-5 h-5 text-blue-400 animate-spin" style={{ animationDuration: '3s' }} />
+              Biometric Authorization Gate
+            </h3>
+            <p className="text-[10px] text-zinc-400">
+              Biometric facial matches secure your profile against high-converting ad engines.
+            </p>
+          </div>
+
+          {/* Video Scanning Window Frame */}
+          <div className="relative w-56 h-56 rounded-full border-4 border-slate-900 overflow-hidden bg-slate-950 shadow-[0_0_40px_rgba(59,130,246,0.15)] flex items-center justify-center group ring-4 ring-blue-500/10 shrink-0">
+            {/* Corner Decorative Reticles */}
+            <div className="absolute top-4 left-4 w-4 h-4 border-t-2 border-l-2 border-blue-500 rounded-tl-sm select-none pointer-events-none" />
+            <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-blue-500 rounded-tr-sm select-none pointer-events-none" />
+            <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-blue-500 rounded-bl-sm select-none pointer-events-none" />
+            <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-blue-500 rounded-br-sm select-none pointer-events-none" />
+
+            {capturedPhoto ? (
+              // Captured Photo Preview
+              <img 
+                src={capturedPhoto} 
+                className="w-full h-full object-cover scale-102" 
+                alt="Captured Facematch Selfie"
+                referrerPolicy="no-referrer"
+              />
+            ) : cameraActive ? (
+              // Live camera stream
+              <video 
+                ref={videoRef}
+                autoPlay 
+                playsInline 
+                muted 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              // Mock fallback portrait
+              <div className="flex flex-col items-center justify-center space-y-2 text-slate-500 p-6">
+                <User className="w-12 h-12 text-slate-700 animate-pulse" />
+                <span className="text-[10px] leading-tight font-medium text-slate-400">Camera stream offline</span>
+              </div>
+            )}
+
+            {/* Glowing red scanner beam line overlay */}
+            {isScanning && (
+              <div 
+                className="absolute left-0 right-0 h-0.5 bg-blue-400 shadow-[0_0_10px_#3b82f6] shadow-blue-500/80 transition-all duration-75 select-none pointer-events-none"
+                style={{ top: `${laserPos}%` }}
+              />
+            )}
+
+            {/* Verification Success Tag */}
+            {capturedPhoto && (
+              <div className="absolute inset-0 bg-emerald-950/20 backdrop-blur-[1px] flex items-center justify-center select-none pointer-events-none">
+                <div className="bg-emerald-500 text-slate-950 font-black px-3 py-1 rounded-full text-[9px] uppercase tracking-wider shadow-lg flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-slate-950" /> SECURE OK
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Hidden utility canvas */}
+          <canvas ref={canvasRef} className="hidden" />
+
+          {/* Scanning Status readout */}
+          <div className="w-full space-y-3 px-1">
+            <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-3 space-y-2 relative overflow-hidden">
+              <div className="flex justify-between items-center border-b border-slate-950/60 pb-1.5 text-left">
+                <span className="text-[9px] text-zinc-500 uppercase font-black flex items-center gap-1">
+                  <Activity className="w-3 h-3 text-blue-400 font-bold" /> Scanner Telemetry
+                </span>
+                <span className="text-[9.5px] text-blue-400 font-mono font-bold">
+                  Conf: {(randomStats.confidence * 100).toFixed(1)}%
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-1 px-1 py-0.5 text-[8.5px] font-mono text-zinc-400">
+                <div>Pitch: <span className="text-white font-bold">{randomStats.pitch}</span></div>
+                <div>Yaw: <span className="text-white font-bold">{randomStats.yaw}</span></div>
+                <div>Roll: <span className="text-white font-bold">{randomStats.roll}</span></div>
+              </div>
+
+              {cameraError && (
+                <div className="text-[8.5px] text-amber-400 px-1.5 bg-amber-500/5 rounded border border-amber-500/10 font-sans leading-tight text-center py-1">
+                  {cameraError}
+                </div>
+              )}
+
+              <p className="text-[10px] text-slate-300 font-medium leading-normal animate-pulse min-h-[30px] flex items-center justify-center">
+                {scanStatus}
+              </p>
+
+              {/* Real Scanning Track Bar */}
+              {isScanning && (
+                <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-850 relative shadow-inner">
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full transition-all duration-150 relative"
+                    style={{ width: `${scanProgress}%` }}
+                  >
+                    <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-white shadow-[0_0_8px_white]" />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Captures settings selector */}
+            {capturedPhoto && (
+              <div className="flex items-center justify-center gap-2 bg-slate-900/60 border border-slate-900/40 py-2 px-3.5 rounded-xl text-[10.5px]">
+                <input 
+                  type="checkbox" 
+                  id="toggle-use-avatar"
+                  className="accent-blue-500 cursor-pointer w-3.5 h-3.5 shrink-0"
+                  checked={useAsAvatar}
+                  onChange={e => setUseAsAvatar(e.target.checked)}
+                />
+                <label htmlFor="toggle-use-avatar" className="text-slate-300 font-semibold cursor-pointer select-none">
+                  Set this scan photo as FaceNOTE avatar
+                </label>
+              </div>
+            )}
+
+            {/* Controls Button logic */}
+            <div className="space-y-2">
+              {!capturedPhoto ? (
+                <button
+                  id="btn-scan-trigger"
+                  type="button"
+                  disabled={isScanning}
+                  onClick={handleStartScan}
+                  className={`w-full py-3.5 rounded-xl text-xs font-black tracking-wide transition-all shadow-lg flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+                    isScanning 
+                      ? 'bg-slate-850 border border-slate-800 text-slate-500 cursor-wait' 
+                      : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/10 active:scale-98'
+                  }`}
+                >
+                  {isScanning ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-slate-500" />
+                      <span>Scanning Face landmark points... {scanProgress}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-4 h-4 text-white" />
+                      <span>{cameraActive ? 'Initiate Biometric Scan' : 'Run simulated facial scanner'}</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    id="btn-scan-reset"
+                    type="button"
+                    onClick={() => {
+                      setCapturedPhoto(null);
+                      setScanProgress(0);
+                      setScanStatus('Position face inside camera frame to begin scan.');
+                    }}
+                    className="flex-1 bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 text-xs py-3 rounded-xl font-bold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Retry Scan
+                  </button>
+
+                  <button
+                    id="btn-scan-proceed"
+                    type="button"
+                    onClick={handleProceedAfterScan}
+                    className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-3 rounded-xl font-black transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/10"
+                  >
+                    <UserCheck className="w-4 h-4" /> Approve Credentials Pass
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
