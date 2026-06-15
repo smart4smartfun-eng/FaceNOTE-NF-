@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mail, Lock, CheckCircle2, AlertCircle, Sparkles, User, Calendar, RefreshCw, Camera, Video, Activity, ShieldCheck, UserCheck } from 'lucide-react';
+import { Mail, Lock, CheckCircle2, AlertCircle, Sparkles, User, Calendar, RefreshCw, Camera, Video, Activity, ShieldCheck, UserCheck, Eye, EyeOff } from 'lucide-react';
 import { User as UserType } from '../types';
 
 interface RegistrationFlowProps {
@@ -64,6 +64,8 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
   // Login input states
   const [loginForm, setLoginForm] = useState({ identifier: '', password: '' });
   const [loginError, setLoginError] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [keepMeSignedIn, setKeepMeSignedIn] = useState(true);
 
   // Real Facebook layout signup states
   const [signupForm, setSignupForm] = useState({
@@ -77,6 +79,7 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
     gender: 'Male'
   });
   const [signupError, setSignupError] = useState('');
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
 
   // Authenticated profile intermediate container
   const [activeSessionUser, setActiveSessionUser] = useState<RegisteredUser | null>(null);
@@ -350,6 +353,13 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
           ? ["⚽ Sports", "💻 Coding", "☕ Coffee", "🏋️ Fitness"]
           : ["📸 Photography", "✈️ Travel", "🎨 Painting", "🎸 Music"]
       };
+
+      if (keepMeSignedIn) {
+        localStorage.setItem('facenote_active_session', JSON.stringify(finalUser));
+      } else {
+        localStorage.removeItem('facenote_active_session');
+      }
+
       onComplete(finalUser);
     }
   };
@@ -415,18 +425,42 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
                 <div className="relative">
                   <input
                     id="login-password"
-                    type="password"
+                    type={showLoginPassword ? 'text' : 'password'}
                     required
-                    placeholder="Enter account password (e.g. password)"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition-all placeholder:text-slate-600 pl-10"
+                    placeholder="Enter account password"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition-all placeholder:text-slate-600 pl-10 pr-10"
                     value={loginForm.password}
                     onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
                   />
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
                     <Lock className="w-4 h-4" />
                   </div>
+                  <button
+                    id="toggle-login-password"
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 focus:outline-none cursor-pointer"
+                    title={showLoginPassword ? "Hide password" : "Show password"}
+                  >
+                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
+            </div>
+
+            {/* Keep me signed in option */}
+            <div className="flex items-center gap-2 px-1">
+              <input
+                id="keep-me-signed-in"
+                name="keepMeSignedIn"
+                type="checkbox"
+                className="accent-blue-500 cursor-pointer w-3.5 h-3.5 rounded border-slate-800"
+                checked={keepMeSignedIn}
+                onChange={e => setKeepMeSignedIn(e.target.checked)}
+              />
+              <label htmlFor="keep-me-signed-in" className="text-[11.5px] text-slate-400 font-bold select-none cursor-pointer">
+                Keep me signed in
+              </label>
             </div>
 
             <button
@@ -454,12 +488,6 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
               </button>
             </div>
           </form>
-
-          <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl text-[10px] text-slate-500 text-center space-y-1">
-            <p className="font-extrabold text-slate-400">🚨 FAST TESTING CREDENTIALS:</p>
-            <p>Email: <span className="text-emerald-400 font-mono font-bold">smart4smartfun@gmail.com</span></p>
-            <p>Password: <span className="text-emerald-400 font-mono font-bold">password</span></p>
-          </div>
         </div>
       )}
 
@@ -525,15 +553,26 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
               {/* New Password */}
               <div>
                 <label className="block text-[10px] text-slate-400 font-semibold uppercase mb-1">New password</label>
-                <input
-                  id="signup-password"
-                  type="password"
-                  required
-                  placeholder="New password"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none"
-                  value={signupForm.password}
-                  onChange={e => setSignupForm({ ...signupForm, password: e.target.value })}
-                />
+                <div className="relative">
+                  <input
+                    id="signup-password"
+                    type={showSignupPassword ? 'text' : 'password'}
+                    required
+                    placeholder="New password"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none pr-10"
+                    value={signupForm.password}
+                    onChange={e => setSignupForm({ ...signupForm, password: e.target.value })}
+                  />
+                  <button
+                    id="toggle-signup-password"
+                    type="button"
+                    onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 focus:outline-none cursor-pointer"
+                    title={showSignupPassword ? "Hide password" : "Show password"}
+                  >
+                    {showSignupPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               {/* Date of Birth Selectors */}

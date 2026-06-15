@@ -12,7 +12,17 @@ import ActiveCallOverlay from './components/ActiveCallOverlay';
 import { Heart, MessageCircle, Landmark, UserCheck, Sparkles, BellRing } from 'lucide-react';
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('facenote_active_session');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return null;
+  });
   const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
   const [stories, setStories] = useState<Story[]>(INITIAL_STORIES);
   const [friends, setFriends] = useState<Friend[]>(INITIAL_FRIENDS);
@@ -284,6 +294,7 @@ export default function App() {
                 posts={posts}
                 wallet={wallet}
                 onLogOut={() => {
+                  localStorage.removeItem('facenote_active_session');
                   setUser(null);
                   setActiveTab('feed');
                 }}
