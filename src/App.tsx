@@ -10,7 +10,7 @@ import ActiveCallOverlay from './components/ActiveCallOverlay';
 import PaymentMentor from './components/PaymentMentor';
 
 // Lucide Icons
-import { Heart, MessageCircle, Landmark, UserCheck, Sparkles, BellRing } from 'lucide-react';
+import { Heart, MessageCircle, Landmark, UserCheck, Sparkles, BellRing, Home, User as UserIcon, Wallet } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(() => {
@@ -434,46 +434,46 @@ export default function App() {
               <button
                 id="footer-tab-feed"
                 onClick={() => setActiveTab('feed')}
-                className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl cursor-pointer transition-all ${
-                  activeTab === 'feed' ? 'text-blue-500 scale-105' : 'text-slate-500 hover:text-slate-300'
+                className={`flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl cursor-pointer transition-all ${
+                  activeTab === 'feed' ? 'text-blue-500 scale-105' : 'text-slate-500 hover:text-slate-350'
                 }`}
               >
-                <span className="text-lg">🏠</span>
+                <Home className="w-5 h-5" />
                 <span className="text-[8.5px] font-bold tracking-wider uppercase">Feed</span>
               </button>
 
               <button
                 id="footer-tab-messenger"
                 onClick={() => setActiveTab('messenger')}
-                className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl cursor-pointer transition-all relative ${
-                  activeTab === 'messenger' ? 'text-blue-500 scale-105' : 'text-slate-500 hover:text-slate-300'
+                className={`flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl cursor-pointer transition-all relative ${
+                  activeTab === 'messenger' ? 'text-blue-500 scale-105' : 'text-slate-500 hover:text-slate-350'
                 }`}
               >
-                <span className="text-lg">💬</span>
+                <MessageCircle className="w-5 h-5" />
                 <span className="text-[8.5px] font-bold tracking-wider uppercase">Chats</span>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full border border-slate-900" />
+                <span className="absolute top-1.5 right-4 w-2 h-2 bg-blue-500 rounded-full border border-slate-900 animate-pulse" />
               </button>
 
               <button
                 id="footer-tab-profile"
                 onClick={() => setActiveTab('profile')}
-                className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl cursor-pointer transition-all ${
                   activeTab === 'profile' ? 'text-blue-500 scale-105' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
-                <span className="text-lg">👤</span>
+                <UserIcon className="w-5 h-5" />
                 <span className="text-[8.5px] font-bold tracking-wider uppercase">Profile</span>
               </button>
 
               <button
                 id="footer-tab-withdrawal"
                 onClick={() => setActiveTab('withdrawal')}
-                className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl cursor-pointer transition-all ${
-                  activeTab === 'withdrawal' ? 'text-blue-500 scale-105' : 'text-slate-500 hover:text-slate-300'
+                className={`flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl cursor-pointer transition-all ${
+                  activeTab === 'withdrawal' ? 'text-emerald-400 scale-105' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
-                <span className="text-lg">🏛️</span>
-                <span className="text-[8.5px] font-bold tracking-wider uppercase text-center truncate w-full">Payouts</span>
+                <Wallet className={`w-5 h-5 ${activeTab === 'withdrawal' ? 'text-emerald-400' : 'text-slate-500'}`} />
+                <span className={`text-[8.5px] font-bold tracking-wider uppercase text-center truncate w-full ${activeTab === 'withdrawal' ? 'text-emerald-400' : ''}`}>Withdrawn</span>
               </button>
 
             </footer>

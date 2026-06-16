@@ -763,15 +763,15 @@ export default function PaymentMentor({ user, wallet, onUpdateWallet, onTriggerF
               </div>
             </div>
 
-            <div className="bg-slate-950 border border-slate-850 p-3.5 rounded-2xl flex-1 text-left space-y-1 relative overflow-hidden">
-              <span className="text-[9px] text-slate-500 uppercase tracking-wide font-extrabold flex items-center gap-1">
-                <ArrowUpRight className="w-3 h-3 text-slate-400" /> Total Payouts Settled
+            <div className="bg-slate-950 border border-emerald-500/10 p-3.5 rounded-2xl flex-1 text-left space-y-1 relative overflow-hidden">
+              <span className="text-[9px] text-slate-400 uppercase tracking-wide font-extrabold flex items-center gap-1">
+                <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Total Withdrawn
               </span>
               <p className="text-lg font-black text-slate-200 font-mono">
                 ${wallet.totalWithdrawn.toFixed(2)} <span className="text-[10px] text-slate-500 font-normal">USD</span>
               </p>
-              <div className="absolute right-2.5 bottom-2.5 w-6 h-6 rounded-full bg-slate-900 border border-slate-855 flex items-center justify-center text-slate-650 font-bold text-[8px] uppercase font-mono">
-                tx
+              <div className="absolute right-2.5 bottom-2.5 w-6 h-6 rounded-full bg-slate-900 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-[8px] uppercase font-mono animate-pulse">
+                $
               </div>
             </div>
           </div>
