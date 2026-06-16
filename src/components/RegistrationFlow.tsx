@@ -14,6 +14,14 @@ interface RegisteredUser {
   avatar: string;
   gender: string;
   birthday: string;
+  bio?: string;
+  workplace?: string;
+  education?: string;
+  currentCity?: string;
+  hometown?: string;
+  relationshipStatus?: string;
+  website?: string;
+  hobbies?: string[];
 }
 
 // Helper to interact with the FaceNote dynamic accounts register database
@@ -423,24 +431,46 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
         isFaceVerified: true,
         faceScanData: capturedPhoto || undefined,
         isOnline: true,
-        bio: activeSessionUser.name === 'Taylor Peterson' 
+        bio: activeSessionUser.bio || (activeSessionUser.name === 'Taylor Peterson' 
           ? 'Exploring FaceNOTE. Lover of classic design paradigms, run training, and clean software architecture. 🚀'
           : activeSessionUser.name === 'Sarah Jenkins'
           ? 'Community developer & outdoor photographer. Always chasing sunsets! 🏞️'
-          : 'Reconnecting on FaceNOTE! Feel free to leave a post or send a direct wave.',
-        workplace: activeSessionUser.name === 'Taylor Peterson'
+          : 'Reconnecting on FaceNOTE! Feel free to leave a post or send a direct wave.'),
+        workplace: activeSessionUser.workplace || (activeSessionUser.name === 'Taylor Peterson'
           ? 'Lead Engineer at Tech Corp'
           : activeSessionUser.name === 'Sarah Jenkins'
           ? 'UI Designer & Photographer'
-          : 'Design lead at FaceNote Creative',
-        education: 'Stanford University',
-        currentCity: 'Redwood City, California',
-        hometown: 'Seattle, Washington',
-        relationshipStatus: activeSessionUser.name === 'Taylor Peterson' ? 'Single' : 'In a relationship',
-        website: 'https://facenote.io/me',
-        hobbies: activeSessionUser.name === 'Taylor Peterson'
+          : 'Design lead at FaceNote Creative'),
+        education: activeSessionUser.education || (activeSessionUser.name === 'Taylor Peterson'
+          ? 'Stanford University'
+          : activeSessionUser.name === 'Sarah Jenkins'
+          ? 'Academy of Art University'
+          : 'University of California, Berkeley'),
+        currentCity: activeSessionUser.currentCity || (activeSessionUser.name === 'Taylor Peterson'
+          ? 'Redwood City, California'
+          : activeSessionUser.name === 'Sarah Jenkins'
+          ? 'San Francisco, California'
+          : 'New York, New York'),
+        hometown: activeSessionUser.hometown || (activeSessionUser.name === 'Taylor Peterson'
+          ? 'Seattle, Washington'
+          : activeSessionUser.name === 'Sarah Jenkins'
+          ? 'Portland, Oregon'
+          : 'Chicago, Illinois'),
+        relationshipStatus: activeSessionUser.relationshipStatus || (activeSessionUser.name === 'Taylor Peterson' 
+          ? 'Single' 
+          : activeSessionUser.name === 'Sarah Jenkins'
+          ? 'In a relationship'
+          : 'Single'),
+        website: activeSessionUser.website || (activeSessionUser.name === 'Taylor Peterson'
+          ? 'https://facenote.io/taylor'
+          : activeSessionUser.name === 'Sarah Jenkins'
+          ? 'https://facenote.io/sarah'
+          : `https://facenote.io/${activeSessionUser.name.toLowerCase().replace(/\s+/g, '')}`),
+        hobbies: activeSessionUser.hobbies || (activeSessionUser.name === 'Taylor Peterson'
           ? ["⚽ Sports", "💻 Coding", "☕ Coffee", "🏋️ Fitness"]
-          : ["📸 Photography", "✈️ Travel", "🎨 Painting", "🎸 Music"]
+          : activeSessionUser.name === 'Sarah Jenkins'
+          ? ["📸 Photography", "✈️ Travel", "🎨 Painting", "🎸 Music"]
+          : ["⚽ Sports", "📱 Tech", "📸 Photography", "✈️ Travel"])
       };
 
       if (keepMeSignedIn) {

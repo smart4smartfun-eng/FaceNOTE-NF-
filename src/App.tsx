@@ -30,9 +30,10 @@ export default function App() {
   const [selectedFriendId, setSelectedFriendId] = useState<string>(INITIAL_FRIENDS[0]?.id || '');
   const [activeTab, setActiveTab] = useState<'feed' | 'messenger' | 'profile' | 'withdrawal'>('feed');
 
-  // Monetization state
-  const [wallet, setWallet] = useState<WalletState>(() => {
-    const saved = localStorage.getItem('facenote_wallet');
+  // Helper to load or initialize wallet based on current logged in user
+  const getInitialWallet = (userEmail?: string): WalletState => {
+    const key = userEmail ? `facenote_wallet_${userEmail.trim().toLowerCase()}` : 'facenote_wallet_guest';
+    const saved = localStorage.getItem(key);
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -50,6 +51,19 @@ export default function App() {
       withdrawals: [],
       founderBalanceUSD: 145.50 // Pre-filled seed for demonstration
     };
+  };
+
+  // Monetization state
+  const [wallet, setWallet] = useState<WalletState>(() => {
+    const savedUser = localStorage.getItem('facenote_active_session');
+    let email = undefined;
+    if (savedUser) {
+      try {
+        const u = JSON.parse(savedUser);
+        email = u.email;
+      } catch (e) {}
+    }
+    return getInitialWallet(email);
   });
 
   // Automatically compute and route 3% of any positive money generated to founder wallet
@@ -80,10 +94,52 @@ export default function App() {
     });
   };
 
+  // Automatically persist user session state and update wallet when active user changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('facenote_active_session', JSON.stringify(user));
+      setWallet(getInitialWallet(user.email));
+
+      // Also persist profile tweaks to the registered users roster
+      const usersData = localStorage.getItem('facenote_registered_users');
+      if (usersData) {
+        try {
+          const usersList = JSON.parse(usersData);
+          const updatedList = usersList.map((u: any) => {
+            if (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()) {
+              return {
+                ...u,
+                name: user.name,
+                phone: user.phoneNumber,
+                avatar: user.avatar,
+                bio: user.bio,
+                workplace: user.workplace,
+                education: user.education,
+                currentCity: user.currentCity,
+                hometown: user.hometown,
+                relationshipStatus: user.relationshipStatus,
+                website: user.website,
+                hobbies: user.hobbies
+              };
+            }
+            return u;
+          });
+          localStorage.setItem('facenote_registered_users', JSON.stringify(updatedList));
+        } catch (e) {
+          console.error("Failed to sync updated profile to registered database:", e);
+        }
+      }
+    } else {
+      localStorage.removeItem('facenote_active_session');
+      setWallet(getInitialWallet(undefined));
+    }
+  }, [user]);
+
   // Automatically persist any wallet changes
   useEffect(() => {
-    localStorage.setItem('facenote_wallet', JSON.stringify(wallet));
-  }, [wallet]);
+    const key = user?.email ? `facenote_wallet_${user.email.trim().toLowerCase()}` : 'facenote_wallet_guest';
+    localStorage.setItem(key, JSON.stringify(wallet));
+  }, [wallet, user?.email]);
 
   // Call overlay configurations
   const [callSession, setCallSession] = useState<CallSession>({
